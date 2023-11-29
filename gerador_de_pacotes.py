@@ -1,0 +1,62 @@
+import numpy as np
+import os
+import tensorflow as tf
+from keras.models import load_model
+from keras.models import Sequential
+
+def wasserstein_loss(y_true, y_pred):
+    # Amostras interpoladas
+    alpha = tf.random.uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
+    interpolated_samples = alpha * real_imgs + (1 - alpha) * fake_imgs
+
+    with tf.GradientTape() as tape:
+        tape.watch(interpolated_samples)
+        interpolated_predictions = discriminator(interpolated_samples)
+
+    gradients = tape.gradient(interpolated_predictions, interpolated_samples)
+    gradients_sqr = tf.reduce_sum(tf.square(gradients), axis=[1, 2, 3])
+    gradient_penalty = tf.reduce_mean((gradients_sqr - 1.0) ** 2)
+
+    # Parâmetro de penalidade do gradiente
+    gradient_penalty_weight = 10.0
+
+    # Calcula a perda de Wasserstein padrão
+    w_loss = tf.reduce_mean(y_true * y_pred)
+
+    # Adiciona a penalização do gradiente à perda de Wasserstein
+    w_loss += gradient_penalty_weight * gradient_penalty
+
+    return w_loss
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+generated_images_dir = os.path.join(current_dir, 'generated_images_packets')
+if not os.path.exists(generated_images_dir):
+    os.makedirs(generated_images_dir)
+
+generator_path = os.path.join(current_dir, 'models/generators/generator_model4.keras')
+
+# Carregar o modelo gerador
+generator = load_model(generator_path, custom_objects={'wasserstein_loss': wasserstein_loss})
+
+# Especificar o número de imagens a serem geradas
+num_images = 1
+
+# Gerar ruído aleatório para entrada do gerador
+noise = np.random.normal(0, 1, (num_images, 1024))  # Substitua input_dim pelo tamanho adequado do ruído
+
+# Gerar imagens usando o gerador
+generated_images = generator.predict(noise)
+
+generated_packets = {"generated_packets": []}
+
+# Salvar as imagens geradas em um arquivo npz, transformando elas para um intervalo entre 0 e 255
+for i in range(generated_images.shape[0]):
+    image = generated_images[i, :, :, 0]
+    image = (image + 1) * 255
+    image = image.astype(np.uint8)
+    print(image)
+    generated_packets["generated_packets"].append(image)
+    
+np.savez(os.path.join(generated_images_dir, 'generated_images'), **generated_packets)
+
