@@ -14,23 +14,31 @@ def main():
     d = 2
 
     # Caminho para o arquivo PCAPNG
-    file_path = os.path.join(current_dir, 's1_tcpreplay1.pcapng')
+    file_path = os.path.join(current_dir, 'segundo_ip.pcap')
+    # file_path = os.path.join(current_dir, 'primeiro_dns.pcap')
 
     pcap = pyshark.FileCapture(file_path, use_json=True, include_raw=True)
 
     for pkt in pcap:
         if index > 0:
             pacote_hexadecimal = pkt.frame_raw.value
-            pacote_hexadecimal = pacote_hexadecimal[0:88]
-
+            pacote_hexadecimal = pacote_hexadecimal[0:168]
+            
             lista_hexadecimal = []
             lista_hexadecimal_com_media = []
 
             for i in range(0, len(pacote_hexadecimal), 2):
                 lista_hexadecimal.append(pacote_hexadecimal[i] + pacote_hexadecimal[i+1])
                 
-            generate_ip(lista_hexadecimal)
-            #remove_checksums(lista_hexadecimal)           
+            for i in range(0, 14):
+                lista_hexadecimal.append('00')
+                
+                
+            print(lista_hexadecimal)
+            print(len(lista_hexadecimal))
+                
+            # generate_ip(lista_hexadecimal)
+            # remove_checksums(lista_hexadecimal)         
             
             for i in range(0, len(lista_hexadecimal)):
                 #separar cada byte 
@@ -38,8 +46,12 @@ def main():
                 lista_hexadecimal_com_media.append(lista_hexadecimal[i][1:] + '8')
                 
             # print(len(lista_hexadecimal_com_media))
+            print(lista_hexadecimal_com_media)
+            print(len(lista_hexadecimal_com_media))
             
             result_matrix = duplicate_and_map_bytes(lista_hexadecimal_com_media, n, d)
+            print(result_matrix)
+            return
             
             # Divide os dados em 80% treinamento e 20% teste
             if index <= 0.8 * total_packets:
@@ -60,7 +72,6 @@ def main():
             del result_matrix
 
             print(index)
-
         index += 1
 
     # Salvar o dataset em um arquivo NPZ
@@ -75,6 +86,15 @@ def generate_ip(lista_hexadecimal):
 def remove_checksums(lista_hexadecimal):
     lista_hexadecimal[28] = '00'
     lista_hexadecimal[29] = '00'
+    
+def gerar_matriz_7x7(lista_hexadecimal):
+    matriz = []
+    for i in range(0, 7):
+        linha = []
+        for j in range(0, 7):
+            linha.append(lista_hexadecimal[i * 7 + j])
+        matriz.append(linha)
+    return matriz
 
 
 def duplicate_and_map_bytes(byte_digits, n, d):
@@ -82,19 +102,19 @@ def duplicate_and_map_bytes(byte_digits, n, d):
     matrix = np.zeros((n, n), dtype=object)
 
     i, j = 0, 0
-    for byte_digit in byte_digits:
-        # Preencher a submatriz d x d com o valor do byte digitado (como string)
-        value = int(byte_digit, 16)  # Converter a string hexadecimal para inteiro
-        matrix[i:i+d, j:j+d] = value
-
-        # Atualizar os índices para a próxima submatriz
-        j += d
+    for byte in byte_digits:
+        matrix[i][j] = byte
+        matrix[i][j + 1] = byte
+        matrix[i + 1][j] = byte
+        matrix[i + 1][j + 1] = byte
+        
+        j += 2
         if j >= n:
             j = 0
-            i += d
-            if i >= n:
-                break
-
+            i += 2
+        if i >= n:
+            break
+    
     return matrix
 
 main()
