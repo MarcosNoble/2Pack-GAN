@@ -6,7 +6,8 @@ from nslookup import Nslookup
 current_directory = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_directory, 'top500Domains.csv')
 
-domains_unreachable = []
+# domains_unreachable = []
+domains_unreachable = json.load(open('domains_unreachable.json'))
 
 df = pd.DataFrame(pd.read_csv(file_path, sep=','))
 
