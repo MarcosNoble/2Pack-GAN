@@ -1,12 +1,12 @@
 import os
 import pandas as pd
+import json
 from nslookup import Nslookup
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_directory, 'top500Domains.csv')
 
 domains_unreachable = []
-
 
 df = pd.DataFrame(pd.read_csv(file_path, sep=','))
 
@@ -48,6 +48,11 @@ def main():
             print('Não foi possível pingar/DNS o domínio: ' + row['Root Domain'])
         
     os.system("sudo pkill -2 tcpdump") # Matar o processo
+    
+    # Salvar a lista de domínios não pingados em um arquivo JSON
+    with open('domains_unreachable.json', 'w') as f:
+        json.dump(domains_unreachable, f)
+        
     
 if __name__ == '__main__':
     main()
