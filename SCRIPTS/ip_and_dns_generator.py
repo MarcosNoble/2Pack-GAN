@@ -29,21 +29,24 @@ def ping_ip(dominio): # ICMP
         return False
 
 def nslookup_request(dominio): # DNS
-    ips_record = dns_query.dns_lookup(dominio)
-    print(ips_record.response_full, ips_record.answer)
+    for i in range(0, 20):
+        ips_record = dns_query.dns_lookup(dominio)
+        print(ips_record.response_full, ips_record.answer)
+
     if ips_record.answer is not None:
         return True
     else:
+        domains_unreachable.append(dominio)
         return False
 
     
 def main():
-    os.system("sudo tcpdump -w terceiro_ping.pcap -i eth0 icmp &") # Iniciar o processo de captura icmp
-    # os.system("sudo tcpdump -w ajustes.pcap -i eth0 udp port 53 &") # Iniciar o processo de captura dns
+    # os.system("sudo tcpdump -w terceiro_ping.pcap -i eth0 icmp &") # Iniciar o processo de captura icmp
+    os.system("sudo tcpdump -w segundo_dns.pcap -i eth0 udp port 53 &") # Iniciar o processo de captura dns
     
     for index, row in df.iterrows():
-        if ping_ip(row['Root Domain']): # ICMP
-        # if nslookup_request(row['Root Domain']): # DNS
+        # if ping_ip(row['Root Domain']): # ICMP
+        if nslookup_request(row['Root Domain']): # DNS
             print(row['Root Domain'])
         else:
             print('Não foi possível pingar/DNS o domínio: ' + row['Root Domain'])
