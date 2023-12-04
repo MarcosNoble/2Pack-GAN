@@ -136,6 +136,7 @@ def compute_gradient_penalty(real_images, fake_images):
 # Loop de treinamento
 import numpy as np
 import matplotlib.pyplot as plt
+# from keras.datasets import mnist
 
 # Carregar o conjunto de dados
 # Carregar dados

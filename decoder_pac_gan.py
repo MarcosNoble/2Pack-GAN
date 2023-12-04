@@ -22,55 +22,70 @@ all_packets = []
 # Depois, substituir o valor da submatriz pela média
 
 image = np.array(generated_packets)
-print(image)
 
 contador = 0
 
 for k in range(generated_packets.shape[0]):    
-    packets = np.zeros((n_quartos, n_quartos), dtype=np.uint8)
+    packets = np.zeros((n_meios, n_meios), dtype=np.uint8)
 
     # Percorrer a imagem, calculando a média de cada submatriz de tamanho dxd
     for i in range(0, n, d):
         for j in range(0, n, d):
-            packets[int(i/4), int(j/4)] = int((image[k, i:i+d, j:j+d].mean()))
+            packets[int(i/2), int(j/2)] = int((image[k, i:i+d, j:j+d].mean()))
             
             
-            j += d
-        i += d
         
-    
-    
-    
+    print(packets)
 
-
-    # Adicionar os resultados da imagem atual à lista geral
-    all_packets.append(packets)
     
-packets_hex = []
-# for packets in all_packets:
-    # packets_hex.append([hex(packet).replace('0x', '') for packet in packets])
+    lista = []
+    
+    for i in range(0, n_meios, 1):
+        for j in range(0, n_meios, d):
+            lista.append(int((str(hex(int(packets[i][j] / 16)).replace('0x', '')) + str(hex(int(packets[i][j+1] / 16)).replace('0x', ''))), 16))
+            # print(i, j)
+
+            
+            
+            
+
+        print(i, j)
+        
+    lista = lista[0:84]
+    
+    print(lista)
+    print(len(lista))
+            
+    
+    
+    
+    all_packets.append(lista)
+    
 
 # Imprimir os resultados de todas as imagens
 for i, packets_print in enumerate(all_packets):
-    print(f"Image {i + 1}: {packets_print}")
+    #print(f"Image {i + 1}: {packets_print}")
     
     print('---------------------------------------------------------------------------------------')
-    
-    print(f"Image {i + 1}: {packets}")
-    # print(f"Image {i + 1}: {packets_hex}")
     
     print('---------------------------------------------------------------------------------------')
         
 
-from scapy.all import wrpcap
+from scapy.all import wrpcap, Ether
 import numpy as np
 
-# Crie um pacote Scapy para cada conjunto de bytes e adicione-os à lista
-scapy_packets = [bytes(packets) for packets in all_packets]
-print(scapy_packets)
+scapy_packets = []
+
+for lista in all_packets:
+    eth_packet = Ether(dst="00:11:22:33:44:55", src="66:77:88:99:aa:bb", type=0x800)
+    ipv4 = bytes(lista[0:64])
+    icmp = bytes(lista[64:84])
+
+    # Adicionar pacote Scapy à lista
+    scapy_packets.append(eth_packet / ipv4 / icmp)
 
 # Nome do arquivo .pcap que você deseja criar
-pcap_filename = 'output_file.pcap'
+pcap_filename = 'esse.pcap'
 
 # Salvar os pacotes Scapy em um arquivo .pcap
 wrpcap(pcap_filename, scapy_packets)

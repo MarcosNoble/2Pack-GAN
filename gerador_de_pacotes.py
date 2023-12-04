@@ -34,7 +34,7 @@ generated_images_dir = os.path.join(current_dir, 'generated_images_packets')
 if not os.path.exists(generated_images_dir):
     os.makedirs(generated_images_dir)
 
-generator_path = os.path.join(current_dir, 'models/generators/generator_model4.keras')
+generator_path = os.path.join(current_dir, 'models/generators/generator_model10.keras')
 
 # Carregar o modelo gerador
 generator = load_model(generator_path, custom_objects={'wasserstein_loss': wasserstein_loss})
