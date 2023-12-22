@@ -1,84 +1,61 @@
 import numpy as np
 import os
-import random
 import pyshark
-from PIL import Image
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-def main():
-    index = 0
-    dataset = {"x_train": [], "y_train": [], "x_test": [], "y_test": []}
-    total_packets = 22000  # Defina o número total de pacotes
-    n = 28
-    d = 2
+# Caminho para o arquivo PCAPNG
+file_path = os.path.join(current_dir, 'terceiro_ping.pcap')
 
-    # Caminho para o arquivo PCAPNG
-    file_path = os.path.join(current_dir, 'terceiro_ping.pcap')
-    # file_path = os.path.join(current_dir, 'primeiro_dns.pcap')
+def packet_useful_data(packet):
+    """Returns the useful data of a packet
 
-    pcap = pyshark.FileCapture(file_path, use_json=True, include_raw=True)
+    Args:
+        packet (string): Packet
 
-    for pkt in pcap:
-        if index > 0:
-            pacote_hexadecimal = pkt.frame_raw.value
-            pacote_hexadecimal = pacote_hexadecimal[28:196] # ICMP
-            
-            lista_hexadecimal = []
-            lista_hexadecimal_com_media = []
+    Returns:
+        string: Useful data of the packet
+    """
+    return packet[28:196]  # ICMP
 
-            for i in range(0, len(pacote_hexadecimal), 2):
-                lista_hexadecimal.append(pacote_hexadecimal[i] + pacote_hexadecimal[i+1])
+
+def packet_means(packet):
+    """Returns the means of the bytes of a packet
+    
+    Args:
+        packet (string): Packet
+        
+    Returns:
+        list: List of means of the bytes of a packet
+    """
+    packet_list = []
+    packet_with_mean = []
+    
+    for i in range(0, len(packet), 2):
+        packet_list.append(packet[i:i+2])
+        
+    for i in range(0, 14):
+        packet_list.append('00')
                 
-            for i in range(0, 14):
-                lista_hexadecimal.append('00')
-                
-                
-            # print(lista_hexadecimal)
-            # print(len(lista_hexadecimal))
-                
-            # generate_ip(lista_hexadecimal)
-            # remove_checksums(lista_hexadecimal)         
-            
-            for i in range(0, len(lista_hexadecimal)):
-                #separar cada byte 
-                lista_hexadecimal_com_media.append(lista_hexadecimal[i][:1] + '8')
-                lista_hexadecimal_com_media.append(lista_hexadecimal[i][1:] + '8')
-                
-            # print(len(lista_hexadecimal_com_media))
-            # print(lista_hexadecimal_com_media)
-            # print(len(lista_hexadecimal_com_media))
-            
-            result_matrix = duplicate_and_map_bytes(lista_hexadecimal_com_media, n, d)
-            # print(result_matrix)
-            # return
-            
-            # Divide os dados em 80% treinamento e 20% teste
-            if index <= 0.8 * total_packets:
-                dataset["x_train"].append(result_matrix.tolist())
-                dataset["y_train"].append(result_matrix.tolist())
-            else:
-                dataset["x_test"].append(result_matrix.tolist())
-                dataset["y_test"].append(result_matrix.tolist())
-                
-            # transformar em imagem                   
-            # img = Image.fromarray(np.array(result_matrix, dtype=np.uint8))
-            # img.save(f'image_{index}.png')
-
-            # Limpar variáveis
-            del pacote_hexadecimal
-            del lista_hexadecimal
-            del lista_hexadecimal_com_media
-            del result_matrix
-
-            print(index)
-        index += 1
-
-    # Salvar o dataset em um arquivo NPZ
-    np.savez(os.path.join(current_dir, 'dataset.npz'), **dataset)
+    for i in range(0, len(packet_list)):
+        packet_with_mean.append(packet_list[i][:1] + '8')
+        packet_with_mean.append(packet_list[i][1:] + '8')
+        
+    return packet_with_mean
 
 
-def duplicate_and_map_bytes(byte_digits, n, d):
+def duplicate_and_map_bytes(byte_digits, n=28, d=2):
+    """Duplicates and maps the bytes of a packet
+    
+    Args:
+        byte_digits (list): List of bytes
+        n (integer): Size of the matrix
+        d (integer): Size of the submatrix
+        
+    Returns:
+        numpy.ndarray: Matrix of bytes
+    """
+    
     # Inicializar a matriz n x n com zeros do tipo object
     matrix = np.zeros((n, n), dtype=object)
 
@@ -99,4 +76,36 @@ def duplicate_and_map_bytes(byte_digits, n, d):
     return matrix
 
 
-main()
+def main():
+    """Main function
+    """
+    total_packets = int(input("How many packets do you want to use? "))
+    
+    dataset = {"x_train": [], "y_train": [], "x_test": [], "y_test": []}
+    
+    pcap = pyshark.FileCapture(file_path, use_json=True, include_raw=True)
+    
+    index = 0
+    
+    for pkt in pcap:
+        print(index)
+        
+        packet = pkt.frame_raw.value
+        packet = packet_useful_data(packet)
+        packet = packet_means(packet)
+        packet = duplicate_and_map_bytes(packet)
+        
+        if index <= 0.8 * total_packets:
+            dataset["x_train"].append(packet.tolist())
+            dataset["y_train"].append(packet.tolist())
+            
+        else:
+            dataset["x_test"].append(packet.tolist())
+            dataset["y_test"].append(packet.tolist())
+        
+        index += 1
+        
+    np.savez(os.path.join(current_dir, 'dataset_ip.npz'), **dataset)
+    
+if __name__ == "__main__":
+    main()

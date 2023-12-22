@@ -18,12 +18,10 @@ if not os.path.exists(ud_dns_file_path):
     with open(ud_dns_file_path, 'w') as f:
         json.dump([], f)
 
-
 current_unreachable_domains = []
 
 df = pd.DataFrame(pd.read_csv(csv_file_path, sep=','))
 print(df.head()) # Debug to check if the file is read correctly
-
 
 def detect_unreachable_domains(option, num_requests=1, dns_query = Nslookup(dns_servers=["1.1.1.1"], verbose=False, tcp=False)):
     """Detects unreachable domains using ICMP or DNS requests
@@ -44,7 +42,7 @@ def detect_unreachable_domains(option, num_requests=1, dns_query = Nslookup(dns_
         with open(ud_ip_file_path, 'w') as f:
             json.dump(current_unreachable_domains, f)
                 
-    else:
+    elif option == '2':
         for index, row in df.iterrows():
             if nslookup_request(row['Root Domain'], num_requests, dns_query):  # DNS
                 print(f'DNS: {index} working')
@@ -53,8 +51,7 @@ def detect_unreachable_domains(option, num_requests=1, dns_query = Nslookup(dns_
                 current_unreachable_domains.append(row['Root Domain'])
                 
         with open(ud_dns_file_path, 'w') as f:
-            json.dump(current_unreachable_domains, f) 
-                
+            json.dump(current_unreachable_domains, f)         
 
 
 def icmp_capture(pcap_name, num_pings):
@@ -78,7 +75,6 @@ def icmp_capture(pcap_name, num_pings):
         
     os.system("sudo pkill -2 tcpdump")  # Kill the process
     
-
 
 def dns_capture(pcap_name, num_dns):
     """Captures DNS packets

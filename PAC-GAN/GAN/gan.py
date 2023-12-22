@@ -24,6 +24,15 @@ learning_rate = 0.001
 beta1 = 0.5
 
 def compute_gradient_penalty(real_images, fake_images):
+    """Calculates the gradient penalty for a batch of "real" and "fake" images, as a loss function for the discriminator.
+    
+    Args:
+        real_images (tensor): Real images
+        fake_images (tensor): Fake images
+        
+    Returns:
+        tensor: Gradient penalty
+    """
     # Amostras interpoladas
     alpha = tf.random.uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
     interpolated_samples = alpha * real_images + (1 - alpha) * fake_images
@@ -39,6 +48,15 @@ def compute_gradient_penalty(real_images, fake_images):
     return gradient_penalty
 
 def wasserstein_loss(y_true, y_pred):
+    """Calculates the Wasserstein loss for a sample batch.
+    
+    Args:
+        y_true (tensor): Real images
+        y_pred (tensor): Fake images
+        
+    Returns:
+        tensor: Wasserstein loss
+    """
     # Amostras interpoladas
     alpha = tf.random.uniform(shape=[batch_size, 1, 1, 1], minval=0.0, maxval=1.0)
     interpolated_samples = alpha * real_imgs + (1 - alpha) * fake_imgs
@@ -64,6 +82,14 @@ def wasserstein_loss(y_true, y_pred):
 
 # Gerador
 def build_generator(random_dim):
+    """Builds the generator model.
+    
+    Args:
+        random_dim (integer): Dimension of the latent vector
+        
+    Returns:
+        Sequential: Generator model
+    """
     model = tf.keras.Sequential()
 
     # Camadas totalmente conectadas com regularização L2
@@ -87,6 +113,14 @@ def build_generator(random_dim):
 
 # Discriminador
 def build_discriminator(input_shape):
+    """Builds the discriminator model.
+    
+    Args:
+        input_shape (tuple): Shape of the input images
+        
+    Returns:
+        Sequential: Discriminator model
+    """
     model = Sequential()
 
     # Primeira camada convolucional com regularização L2
@@ -132,7 +166,6 @@ gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
 # Loop de treinamento
 import numpy as np
 import matplotlib.pyplot as plt
-# from keras.datasets import mnist
 
 # Carregar o conjunto de dados
 # Carregar dados
@@ -145,6 +178,15 @@ x_train = np.expand_dims(x_train, axis=-1)
 x_train = (x_train / 255.0) * 2.0 - 1.0
 
 def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
+    """Saves generated images to a file.
+    
+    Args:
+        epoch (integer): Epoch number
+        generator (Sequential): Generator model
+        batch (integer): Batch number
+        examples (integer): Number of examples
+        random_dim (integer): Dimension of the latent vector
+    """
     noise = np.random.normal(0, 1, (examples, random_dim))
 
     generated_images = generator.predict(noise)

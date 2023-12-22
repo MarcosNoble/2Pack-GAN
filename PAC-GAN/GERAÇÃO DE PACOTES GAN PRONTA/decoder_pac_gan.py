@@ -143,7 +143,6 @@ def ip_checksum(ip):
 
 def icmp_checksum(icmp):
     words = splitN(''.join(icmp.split()),4)
-    print(words)
 
     csum = 0
     for word in words:
@@ -177,5 +176,5 @@ def generatePcapFile(filename):
     writeByteStringToFile(bytestring, pcapfile)
         
 
-pcapfile = 'test.pcap'
+pcapfile = 'pacotenovo.pcap'
 generatePcapFile(pcapfile)
