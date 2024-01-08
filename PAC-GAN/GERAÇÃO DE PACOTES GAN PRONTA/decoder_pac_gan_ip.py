@@ -10,6 +10,14 @@ n = 28
 n_meios = int(n / d)
 
 def decode_packets(generated_packets_dir):
+    '''Decodes the generated packets
+    
+    Args:
+        generated_packets_dir (string): Path to the directory containing the generated packets
+        
+    Returns:
+        string: Literal representation of the generated packets
+    '''
     file_path = os.path.join(generated_packets_dir, 'generated_packets.npz')
     
     # Carregar o arquivo npz

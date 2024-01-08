@@ -33,20 +33,52 @@ eth_header = ('00 00 00 00 00 00'     #Source Mac
               '08 00')                #Protocol (0x0800 = IP)
                 
 def getByteLength(str1):
+    '''Returns the length of a string in bytes
+    
+    Args:
+        str1 (string): String
+        
+    Returns:
+        integer: Length of the string in bytes
+    '''
     return int(len(''.join(str1.split())) / 2)
 
 def writeByteStringToFile(bytestring, filename):
+    '''Writes a bytestring to a file
+    
+    Args:
+        bytestring (string): Bytestring to be written to the file
+        filename (string): Name of the file to be written
+    '''
     bytelist = bytestring.split()  
     bytes = binascii.a2b_hex(''.join(bytelist))
     bitout = open(filename, 'wb')
     bitout.write(bytes)
     
 #Splits the string into a list of tokens every n characters
-def splitN(str1,n):
+def splitN(str1, n):
+    '''Splits the string into a list of tokens every n characters
+    
+    Args:
+        str1 (string): String to be split
+        n (integer): Number of characters to split the string
+        
+    Returns:
+        list: List of tokens
+    '''
     return [str1[start:start+n] for start in range(0, len(str1), n)]
     
 #Calculates and returns the IP checksum based on the given IP Header
 def ip_checksum(ip):
+    '''Calculates and returns the IP checksum based on the given IP Header
+    
+    Args:
+        ip (string): IP Header
+        
+    Returns:
+        integer: IP checksum
+            
+    '''
     #split into bytes    
     words = splitN(''.join(ip.split()),4)
 
@@ -60,6 +92,14 @@ def ip_checksum(ip):
     return csum
 
 def icmp_checksum(icmp):
+    '''Calculates and returns the ICMP checksum based on the given ICMP Header
+    
+    Args:
+        icmp (string): ICMP Header
+        
+    Returns:
+        integer: ICMP checksum
+    '''
     words = splitN(''.join(icmp.split()),4)
 
     csum = 0
@@ -73,6 +113,14 @@ def icmp_checksum(icmp):
     return csum
 
 def generatePcapFile(filename):
+    '''Generates a pcap file based on the given filename
+    
+    Args:
+        filename (string): Name of the pcap file to be generated
+        
+    Returns:
+        string: Bytestring of the generated pcap file
+    '''
     icmp_len = getByteLength(icmp_header_data)
     icmp = icmp_header_data
     checksum = icmp_checksum(icmp.replace('XXXX','00 00'))
