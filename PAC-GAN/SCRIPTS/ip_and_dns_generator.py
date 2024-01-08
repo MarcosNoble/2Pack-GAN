@@ -4,6 +4,8 @@ import json
 from nslookup import Nslookup
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_directory)
+pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
 csv_file_path = os.path.join(current_directory, 'top500Domains.csv')
 
@@ -54,14 +56,14 @@ def detect_unreachable_domains(option, num_requests=1, dns_query = Nslookup(dns_
             json.dump(current_unreachable_domains, f)         
 
 
-def icmp_capture(pcap_name, num_pings):
+def icmp_capture(pcap_name, num_pings, pcap_folder):
     """Captures ICMP packets
 
     Args:
         pcap_name (string): Name of the pcap file
         num_pings (integer): Number of pings
     """
-    os.system("sudo tcpdump -w " + pcap_name + " -i eth0 icmp &")  # Start the ICMP capture process
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 icmp &")  # Start the ICMP capture process
     unreachable_domains_file_ip = json.load(open(ud_ip_file_path))
     
     for index, row in df.iterrows():
@@ -76,14 +78,14 @@ def icmp_capture(pcap_name, num_pings):
     os.system("sudo pkill -2 tcpdump")  # Kill the process
     
 
-def dns_capture(pcap_name, num_dns):
+def dns_capture(pcap_name, num_dns, pcap_folder):
     """Captures DNS packets
 
     Args:
         pcap_name (string): Name of the pcap file
         num_dns (integer): Number of DNS requests
     """
-    os.system("sudo tcpdump -w " + pcap_name + " -i eth0 port 53 &")  # Start the DNS capture process
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 port 53 &")  # Start the DNS capture process
     unreachable_domains_file_dns = json.load(open(ud_dns_file_path))
     
     dns_query = Nslookup(dns_servers=["1.1.1.1"], verbose=False, tcp=False)
@@ -115,7 +117,6 @@ def ping_ip(domain, num_pings):  # ICMP
         if response == 0:
             return True
         else:
-            current_unreachable_domains.append(domain)
             return False
     
 
@@ -137,7 +138,6 @@ def nslookup_request(domain, num_dns, dns_query):  # DNS
     if ips_record.answer is not None:
         return True
     else:
-        current_unreachable_domains.append(domain)
         return False
 
 
@@ -151,14 +151,14 @@ def main():
             num_pings = int(input("Enter the number of pings: "))
             pcap_name = input("Enter the name of the pcap file: ") + '.pcap'
             detect_unreachable_domains(option)
-            icmp_capture(pcap_name, num_pings)
+            icmp_capture(pcap_name, num_pings, pcap_dir)
             break
         
         elif option == '2':
             num_dns = int(input("Enter the number of dns requests: "))
             pcap_name = input("Enter the name of the pcap file: ") + '.pcap'
             detect_unreachable_domains(option)
-            dns_capture(pcap_name, num_dns)
+            dns_capture(pcap_name, num_dns, pcap_dir)
             break
         
         else:
