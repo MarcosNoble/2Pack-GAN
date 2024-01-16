@@ -40,9 +40,7 @@ def decode_packets(generated_packets_dir):
         for i in range(0, n_meios, 1):
             for j in range(0, n_meios, d):
                 packet_in_list.append((str(hex(int(packets[i][j] / 16)).replace('0x', '')) + str(hex(int(packets[i][j+1] / 16)).replace('0x', ''))))
-                
-        print(packet_in_list)
-    
+                    
         ipv4 = packet_in_list[0:20]
         udp = packet_in_list[20:60]
         literal_packet_in_list1 = ''.join(ipv4)

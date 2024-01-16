@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
 # Caminho para o arquivo PCAPNG
-file_path = os.path.join(pcap_dir, 'quarto_dns.pcap')
+file_path = os.path.join(pcap_dir, 'quinto_dns.pcap')
 
 def packet_useful_data(packet):
     """Returns the useful data of a packet

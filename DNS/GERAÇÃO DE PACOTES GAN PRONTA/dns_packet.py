@@ -111,7 +111,7 @@ def udp_checksum(udp):
 
     return csum
 
-def generatePcapFile(filename):
+def generatePcapFile(filename, number_of_packets):
     '''Generates a pcap file based on the given filename
     
     Args:
@@ -120,24 +120,27 @@ def generatePcapFile(filename):
     Returns:
         string: Bytestring of the generated pcap file
     '''
-    udp_len = getByteLength(udp_header_data)
-    print(udp_len)
-    udp = udp_header_data.replace('XXXX',"%04x"%udp_len)
-    checksum = udp_checksum(udp.replace('YYYY','00 00'))
-    udp = udp.replace('YYYY',"%04x"%checksum)
-    
-    ip_len = udp_len + getByteLength(ipv4_header)
-    ip = ipv4_header.replace('XXXX',"%04x"%ip_len)
-    checksum = ip_checksum(ip.replace('YYYY','00 00'))
-    ip = ip.replace('YYYY',"%04x"%checksum)
-    
-    pcap_len = ip_len + getByteLength(eth_header)
-    hex_str = "%08x"%pcap_len
-    reverse_hex_str = hex_str[6:] + hex_str[4:6] + hex_str[2:4] + hex_str[:2]
-    pcaph = pcap_packet_header.replace('XX XX XX XX',reverse_hex_str)
-    pcaph = pcaph.replace('YY YY YY YY',reverse_hex_str)
+    for i in range(1, number_of_packets + 1):
+        udp_len = getByteLength(udp_header_data[i-1])
+        udp = udp_header_data[i-1].replace('XXXX',"%04x"%udp_len)
+        checksum = udp_checksum(udp.replace('YYYY','00 00'))
+        udp = udp.replace('YYYY',"%04x"%checksum)
         
-    bytestring = pcap_global_header + pcaph + eth_header + ip + udp
+        ip_len = udp_len + getByteLength(ipv4_header[i-1])
+        ip = ipv4_header[i-1].replace('XXXX',"%04x"%ip_len)
+        checksum = ip_checksum(ip.replace('YYYY','00 00'))
+        ip = ip.replace('YYYY',"%04x"%checksum)
+        
+        pcap_len = ip_len + getByteLength(eth_header)
+        hex_str = "%08x"%pcap_len
+        reverse_hex_str = hex_str[6:] + hex_str[4:6] + hex_str[2:4] + hex_str[:2]
+        pcaph = pcap_packet_header.replace('XX XX XX XX',reverse_hex_str)
+        pcaph = pcaph.replace('YY YY YY YY',reverse_hex_str)
+            
+        if i == 1:
+            bytestring = pcap_global_header + pcaph + eth_header + ip + udp
+        else:
+            bytestring += pcaph + eth_header + ip + udp
     
     output_path = os.path.join(generated_packets_dir, filename)
     
@@ -145,15 +148,19 @@ def generatePcapFile(filename):
     
 number_of_packets = int(input("Type the number of packets to generate: "))
 
-generate_packets_by_gan(number_of_packets, generated_bytes_dir)
+ipv4_header = []
+udp_header_data = []
 
-literal_lista1, literal_lista2 = decode_packets(generated_bytes_dir)
+for i in range(1, number_of_packets + 1):
+    generate_packets_by_gan(number_of_packets, generated_bytes_dir)
 
-ipv4_header = literal_lista1[0:4] + 'XX' 'XX' + literal_lista1[8:20] + 'YY' 'YY' + literal_lista1[24:40]
-udp_header_data = literal_lista2[0:8] + 'XX' 'XX' + 'YY' 'YY' + literal_lista2[16:]
-print(udp_header_data)
+    literal_lista1, literal_lista2 = decode_packets(generated_bytes_dir)
+
+    ipv4_header.append(literal_lista1[0:4] + 'XX' 'XX' + literal_lista1[8:20] + 'YY' 'YY' + literal_lista1[24:40])
+    udp_header_data.append(literal_lista2[0:8] + 'XX' 'XX' + 'YY' 'YY' + literal_lista2[16:])
         
 pcap_name = input("Type the name of the pcap file: ")        
 pcapfile = pcap_name + '.pcap'
-generatePcapFile(pcapfile)
+
+generatePcapFile(pcapfile, number_of_packets)
 print("Pcap file generated!")
