@@ -1,3 +1,4 @@
+import dis
 import os
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU
@@ -143,43 +144,6 @@ def build_discriminator(input_shape):
 
     return model
 
-# Construir o gerador e o discriminador
-random_dim = 1024  # Dimensão do vetor latente
-input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
-
-generator = build_generator(random_dim)
-discriminator = build_discriminator(input_shape)
-discriminator.summary()
-
-# Compilar o modelo do gerador
-generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Compilar o modelo do discriminador
-discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
-
-# Combinação do gerador e do discriminador em um modelo GAN
-discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
-
-gan_input = tf.keras.Input(shape=(random_dim,))
-x = generator(gan_input)
-gan_output = discriminator(x)
-gan = tf.keras.Model(gan_input, gan_output)
-
-# Compilar o modelo GAN
-gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Loop de treinamento
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Carregar o conjunto de dados
-(x_train, _), (_, _) = load_data_npz()
-
-# Expandir dimensões
-x_train = np.expand_dims(x_train, axis=-1)
-
-# Normalizar para o intervalo [-1, 1]
-x_train = (x_train / 255.0) * 2.0 - 1.0
 
 def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
     """Saves generated images to a file.
@@ -213,12 +177,49 @@ def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024)
     plt.savefig(f"{output_images_dir}/generated_images_{epoch}/generated_image_{batch}.png")
         
 
-# Configurações de treinamento
-batch_size = 64
-epochs = 50 # Número de épocas
-sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
-
 if __name__ == '__main__':
+    # Construir o gerador e o discriminador
+    random_dim = 1024  # Dimensão do vetor latente
+    input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
+
+    generator = build_generator(random_dim)
+    discriminator = build_discriminator(input_shape)
+
+    # Compilar o modelo do gerador
+    generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+
+    # Compilar o modelo do discriminador
+    discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
+
+    # Combinação do gerador e do discriminador em um modelo GAN
+    discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
+
+    gan_input = tf.keras.Input(shape=(random_dim,))
+    x = generator(gan_input)
+    gan_output = discriminator(x)
+    gan = tf.keras.Model(gan_input, gan_output)
+
+    # Compilar o modelo GAN
+    gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+    
+    # Configurações de treinamento
+    batch_size = 64
+    epochs = 50 # Número de épocas
+    sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
+
+    # Loop de treinamento
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Carregar o conjunto de dados
+    (x_train, _), (_, _) = load_data_npz()
+
+    # Expandir dimensões
+    x_train = np.expand_dims(x_train, axis=-1)
+
+    # Normalizar para o intervalo [-1, 1]
+    x_train = (x_train / 255.0) * 2.0 - 1.0
+    
     # Loop de treinamento:
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -263,4 +264,3 @@ if __name__ == '__main__':
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
                 discriminator.save(f"{models_dir}/discriminator_model{epoch}.keras")
             
-

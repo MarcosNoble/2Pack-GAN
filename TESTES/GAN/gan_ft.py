@@ -8,13 +8,18 @@ from tensorflow.keras.datasets import mnist
 from data_loader import load_data_npz
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-output_images_dir = os.path.join(current_dir, 'output_images_ft')
+output_images_dir = os.path.join(current_dir, 'output_images')
 
-models_dir = os.path.join(current_dir, 'models_ft')
+models_dir = os.path.join(current_dir, 'models')
+
+models_ft_dir = os.path.join(current_dir, 'models_ft')
 
 if not os.path.exists(f"{models_dir}"):
         os.makedirs(f"{models_dir}")
-
+        
+if not os.path.exists(f"{models_ft_dir}"):
+        os.makedirs(f"{models_ft_dir}")
+        
 # Função de regularização L2
 l2_reg = 2.5e-5
 
@@ -51,6 +56,7 @@ def compute_gradient_penalty(real_images, fake_images):
 
     return gradient_penalty
 
+@tf.keras.utils.register_keras_serializable()
 def wasserstein_loss(y_true, y_pred):
     """Calculates the Wasserstein loss for a sample batch.
     
@@ -84,102 +90,6 @@ def wasserstein_loss(y_true, y_pred):
 
     return w_loss
 
-# Gerador
-def build_generator(random_dim):
-    """Builds the generator model.
-    
-    Args:
-        random_dim (integer): Dimension of the latent vector
-        
-    Returns:
-        Sequential: Generator model
-    """
-    model = tf.keras.Sequential()
-
-    # Camadas totalmente conectadas com regularização L2
-    model.add(Dense(64, input_dim=random_dim, activation=activation, kernel_regularizer=l2(l2_reg)))
-    model.add(Dense(1024, activation=activation, kernel_regularizer=l2(l2_reg)))
-    model.add(Dense(12544, activation=activation, kernel_regularizer=l2(l2_reg)))
-
-    # Reshape para 7x7x256
-    model.add(Reshape((7, 7, 256)))
-
-    # Deconvolution para 14x14x64
-    model.add(Conv2DTranspose(64, (4, 4), strides=(2, 2), padding='same', activation=activation, kernel_regularizer=l2(l2_reg)))
-
-    # Deconvolution para 28x28x32
-    model.add(Conv2DTranspose(32, (4, 4), strides=(2, 2), padding='same', activation=activation, kernel_regularizer=l2(l2_reg)))
-
-    # Camada de saída (convolução para 28x28)
-    model.add(Conv2D(1, (1, 1), padding='same', activation='tanh'))
-
-    return model
-
-# Discriminador
-def build_discriminator(input_shape):
-    """Builds the discriminator model.
-    
-    Args:
-        input_shape (tuple): Shape of the input images
-        
-    Returns:
-        Sequential: Discriminator model
-    """
-    model = Sequential()
-
-    # Primeira camada convolucional com regularização L2
-    model.add(Conv2D(64, kernel_size=(4, 4), strides=(2, 2), padding='same', input_shape=input_shape, kernel_regularizer=l2(l2_reg), name='conv1'))
-    model.add(tf.keras.layers.Activation('relu'))
-
-    # Segunda camada convolucional com regularização L2
-    model.add(Conv2D(128, kernel_size=(4, 4), strides=(2, 2), padding='same', kernel_regularizer=l2(l2_reg), name='conv2'))
-    model.add(tf.keras.layers.Activation('relu'))
-
-    # Camada de flatten
-    model.add(Flatten(name='flatten'))
-
-    # Camada totalmente conectada (dense) com regularização L2
-    model.add(Dense(1, activation='linear', kernel_regularizer=l2(l2_reg), name='dense'))
-
-    return model
-
-# Construir o gerador e o discriminador
-random_dim = 1024  # Dimensão do vetor latente
-input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
-
-generator = build_generator(random_dim)
-discriminator = build_discriminator(input_shape)
-discriminator.summary()
-
-# Compilar o modelo do gerador
-generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Compilar o modelo do discriminador
-discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
-
-# Combinação do gerador e do discriminador em um modelo GAN
-discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
-
-gan_input = tf.keras.Input(shape=(random_dim,))
-x = generator(gan_input)
-gan_output = discriminator(x)
-gan = tf.keras.Model(gan_input, gan_output)
-
-# Compilar o modelo GAN
-gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Loop de treinamento
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Carregar o conjunto de dados
-(x_train, _), (_, _) = load_data_npz()
-
-# Expandir dimensões
-x_train = np.expand_dims(x_train, axis=-1)
-
-# Normalizar para o intervalo [-1, 1]
-x_train = (x_train / 255.0) * 2.0 - 1.0
 
 def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
     """Saves generated images to a file.
@@ -213,12 +123,56 @@ def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024)
     plt.savefig(f"{output_images_dir}/generated_images_{epoch}/generated_image_{batch}.png")
         
 
-# Configurações de treinamento
-batch_size = 64
-epochs = 50 # Número de épocas
-sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
-
 if __name__ == '__main__':
+    # Construir o gerador e o discriminador
+    random_dim = 1024  # Dimensão do vetor latente
+    input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
+
+    generator = tf.keras.models.load_model(f"{models_dir}/generator_model0.keras")
+    discriminator = tf.keras.models.load_model(f"{models_dir}/discriminator_model0.keras")
+    
+    # Especificar o número de camadas que deseja congelar no discriminador
+    #n_layers_to_freeze_discriminator = 1  # Ajuste conforme necessário
+
+    # Congelar os pesos das camadas iniciais do discriminador
+    #for layer in discriminator.layers[:n_layers_to_freeze_discriminator]:
+    #    layer.trainable = False
+
+    # Compilar o modelo do gerador
+    generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+
+    # Compilar o modelo do discriminador
+    discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
+
+    # Combinação do gerador e do discriminador em um modelo GAN
+    discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
+
+    gan_input = tf.keras.Input(shape=(random_dim,))
+    x = generator(gan_input)
+    gan_output = discriminator(x)
+    gan = tf.keras.Model(gan_input, gan_output)
+
+    # Compilar o modelo GAN
+    gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+    
+    # Configurações de treinamento
+    batch_size = 64
+    epochs = 50 # Número de épocas
+    sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
+
+    # Loop de treinamento
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Carregar o conjunto de dados
+    (x_train, _), (_, _) = load_data_npz()
+
+    # Expandir dimensões
+    x_train = np.expand_dims(x_train, axis=-1)
+
+    # Normalizar para o intervalo [-1, 1]
+    x_train = (x_train / 255.0) * 2.0 - 1.0
+    
     # Loop de treinamento:
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -260,6 +214,6 @@ if __name__ == '__main__':
                 # Exibir o progresso
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
-                generator.save(f"{models_dir}/generator_model{epoch}.keras")
+                generator.save(f"{models_ft_dir}/generator_model{epoch}.keras")
+                discriminator.save(f"{models_ft_dir}/discriminator_model{epoch}.keras")
             
-

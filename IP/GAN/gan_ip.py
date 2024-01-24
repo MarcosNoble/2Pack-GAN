@@ -143,42 +143,6 @@ def build_discriminator(input_shape):
 
     return model
 
-# Construir o gerador e o discriminador
-random_dim = 1024  # Dimensão do vetor latente
-input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
-
-generator = build_generator(random_dim)
-discriminator = build_discriminator(input_shape)
-
-# Compilar o modelo do gerador
-generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Compilar o modelo do discriminador
-discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
-
-# Combinação do gerador e do discriminador em um modelo GAN
-discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
-
-gan_input = tf.keras.Input(shape=(random_dim,))
-x = generator(gan_input)
-gan_output = discriminator(x)
-gan = tf.keras.Model(gan_input, gan_output)
-
-# Compilar o modelo GAN
-gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
-
-# Loop de treinamento
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Carregar o conjunto de dados
-(x_train, _), (_, _) = load_data_npz()
-
-# Expandir dimensões
-x_train = np.expand_dims(x_train, axis=-1)
-
-# Normalizar para o intervalo [-1, 1]
-x_train = (x_train / 255.0) * 2.0 - 1.0
 
 def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
     """Saves generated images to a file.
@@ -212,12 +176,52 @@ def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024)
     plt.savefig(f"{output_images_dir}/generated_images_{epoch}/generated_image_{batch}.png")
         
 
-# Configurações de treinamento
-batch_size = 64
-epochs = 50 # Número de épocas
-sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
-
 if __name__ == '__main__':
+    # Construir o gerador e o discriminador
+    random_dim = 1024  # Dimensão do vetor latente
+    input_shape = (28, 28, 1)  # Dimensões das imagens de entrada
+
+    generator = build_generator(random_dim)
+    discriminator = build_discriminator(input_shape)
+
+    # Compilar o modelo do gerador
+    generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+
+    # Compilar o modelo do discriminador
+    discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
+
+    # Combinação do gerador e do discriminador em um modelo GAN
+    discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
+
+    gan_input = tf.keras.Input(shape=(random_dim,))
+    x = generator(gan_input)
+    gan_output = discriminator(x)
+    gan = tf.keras.Model(gan_input, gan_output)
+
+    # Compilar o modelo GAN
+    gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
+    
+    # Configurações de treinamento
+    batch_size = 64
+    epochs = 50 # Número de épocas
+    sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
+
+    # Loop de treinamento
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Carregar o conjunto de dados
+    (x_train, _), (_, _) = load_data_npz()
+
+    # Expandir dimensões
+    x_train = np.expand_dims(x_train, axis=-1)
+
+    # Normalizar para o intervalo [-1, 1]
+    x_train = (x_train / 255.0) * 2.0 - 1.0
+    
+    discriminator_history = []
+    generator_history = []
+    
     # Loop de treinamento:
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -248,17 +252,30 @@ if __name__ == '__main__':
                 # Atualizar pesos do discriminador
                 d_loss += gp
                 discriminator.trainable = False
+                
+                discriminator_history.append(d_loss)
 
             # Treinar o gerador
             noise = np.random.normal(0, 1, (batch_size, random_dim))
 
             # Rótulos indicam que as imagens geradas são "reais"
             g_loss = gan.train_on_batch(noise, np.ones(batch_size))
+            
+            generator_history.append(g_loss)
 
             if batch % sample_interval == 0:
                 # Exibir o progresso
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
+                
+    plt.plot(discriminator_history)
+    plt.plot(generator_history)
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Discriminator', 'Generator'], loc='upper left')
+    plt.savefig(f"{current_dir}/gan_loss.png")
+    plt.show()
             
 
