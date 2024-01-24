@@ -94,16 +94,19 @@ def main():
         
         packet = pkt.frame_raw.value
         packet = packet_useful_data(packet)
-        packet = packet_means(packet)
-        packet = duplicate_and_map_bytes(packet)
+
         
-        if index <= 0.8 * total_packets:
-            dataset["x_train"].append(packet.tolist())
-            dataset["y_train"].append(packet.tolist())
+        if packet[2:4] == '00': # Verifications for ICMP port reachable.
+            packet = packet_means(packet)
+            packet = duplicate_and_map_bytes(packet)
             
-        else:
-            dataset["x_test"].append(packet.tolist())
-            dataset["y_test"].append(packet.tolist())
+            if index <= 0.8 * total_packets:
+                dataset["x_train"].append(packet.tolist())
+                dataset["y_train"].append(packet.tolist())
+                
+            else:
+                dataset["x_test"].append(packet.tolist())
+                dataset["y_test"].append(packet.tolist())
         
         index += 1
         
