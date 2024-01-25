@@ -1,4 +1,3 @@
-import dis
 import os
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU
@@ -220,6 +219,9 @@ if __name__ == '__main__':
     # Normalizar para o intervalo [-1, 1]
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
+    discriminator_history = []
+    generator_history = []
+    
     # Loop de treinamento:
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -250,17 +252,32 @@ if __name__ == '__main__':
                 # Atualizar pesos do discriminador
                 d_loss += gp
                 discriminator.trainable = False
+                
+                discriminator_history.append(d_loss)
 
             # Treinar o gerador
             noise = np.random.normal(0, 1, (batch_size, random_dim))
 
             # Rótulos indicam que as imagens geradas são "reais"
             g_loss = gan.train_on_batch(noise, np.ones(batch_size))
+            
+            generator_history.append(g_loss)
 
             if batch % sample_interval == 0:
                 # Exibir o progresso
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
-                generator.save(f"{models_dir}/generator_model{epoch}.keras")
-                discriminator.save(f"{models_dir}/discriminator_model{epoch}.keras")
+                generator.save_weights(f"{models_dir}/generator_weights.h5")
+                discriminator.save_weights(f"{models_dir}/discriminator_weights.h5")
+                gan.save_weights(f"{models_dir}/gan_weights.h5")
+                
+    plt.plot(discriminator_history)
+    plt.plot(generator_history)
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Discriminator', 'Generator'], loc='upper left')
+    plt.savefig(f"{current_dir}/gan_loss.png")
+    plt.show()
             
+
