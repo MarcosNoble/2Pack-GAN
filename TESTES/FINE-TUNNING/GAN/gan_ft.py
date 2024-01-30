@@ -1,3 +1,4 @@
+from distutils.command import build
 import os
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU
@@ -8,13 +9,16 @@ from tensorflow.keras.datasets import mnist
 from data_loader import load_data_npz
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-output_images_dir = os.path.join(current_dir, 'output_images')
+output_images_dir = os.path.join(current_dir, 'output_images_ft')
 
 models_dir = os.path.join(current_dir, 'models')
 
-if not os.path.exists(f"{models_dir}"):
-        os.makedirs(f"{models_dir}")
+models_ft_dir = os.path.join(current_dir, 'models_ft')
 
+        
+if not os.path.exists(f"{models_ft_dir}"):
+        os.makedirs(f"{models_ft_dir}")
+        
 # Função de regularização L2
 l2_reg = 2.5e-5
 
@@ -51,12 +55,13 @@ def compute_gradient_penalty(real_images, fake_images):
 
     return gradient_penalty
 
+@tf.keras.utils.register_keras_serializable()
 def wasserstein_loss(y_true, y_pred):
-    """Calculates the Wasserstein loss for a sample batch.
+    """Calculates the Wasserstein loss for a batch of "real" and "fake" images, as a loss function for the discriminator.
     
     Args:
-        y_true (tensor): Real images
-        y_pred (tensor): Fake images
+        y_true (tensor): True labels
+        y_pred (tensor): Predicted labels
         
     Returns:
         tensor: Wasserstein loss
@@ -143,7 +148,6 @@ def build_discriminator(input_shape):
 
     return model
 
-
 def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
     """Saves generated images to a file.
     
@@ -183,6 +187,25 @@ if __name__ == '__main__':
 
     generator = build_generator(random_dim)
     discriminator = build_discriminator(input_shape)
+    
+    generator.load_weights(f"{models_dir}/generator50.weights.h5")
+    discriminator.load_weights(f"{models_dir}/discriminator50.weights.h5")
+    
+    # Especificar o número de camadas que deseja congelar no discriminador
+    '''n_layers_to_freeze_discriminator = 2  # Ajuste conforme necessário
+
+    # Congelar os pesos das camadas iniciais do discriminador
+    for layer in discriminator.layers[:n_layers_to_freeze_discriminator]:
+        layer.trainable = False'''
+        
+    #discriminator.summary()
+        
+    # Especificar o número de camadas que deseja congelar no gerador
+    '''n_layers_to_freeze_generator = 2  # Ajuste conforme necessário
+
+    # Congelar os pesos das camadas iniciais do gerador
+    for layer in generator.layers[:n_layers_to_freeze_generator]:
+        layer.trainable = False'''
 
     # Compilar o modelo do gerador
     generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
@@ -192,6 +215,8 @@ if __name__ == '__main__':
 
     # Combinação do gerador e do discriminador em um modelo GAN
     discriminator.trainable = False  # Congela os pesos do discriminador durante o treinamento do GAN
+    
+    #discriminator.summary()
 
     gan_input = tf.keras.Input(shape=(random_dim,))
     x = generator(gan_input)
@@ -219,9 +244,6 @@ if __name__ == '__main__':
     # Normalizar para o intervalo [-1, 1]
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
-    discriminator_history = []
-    generator_history = []
-    
     # Loop de treinamento:
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -235,8 +257,11 @@ if __name__ == '__main__':
                 noise = np.random.normal(0, 1, (batch_size, random_dim))
                 fake_imgs = generator.predict(noise)
 
-                # Treinar o discriminador
+                #for layer in generator.layers[n_layers_to_freeze_generator:]:
+                #    layer.trainable = True
                 discriminator.trainable = True
+                
+                #discriminator.summary()
 
                 # Adversarial ground truths
                 valid = np.ones((batch_size, 1))
@@ -251,33 +276,19 @@ if __name__ == '__main__':
 
                 # Atualizar pesos do discriminador
                 d_loss += gp
+                #for layer in generator.layers[:n_layers_to_freeze_generator]:
+                    #layer.trainable = False
                 discriminator.trainable = False
-                
-                discriminator_history.append(d_loss)
 
             # Treinar o gerador
             noise = np.random.normal(0, 1, (batch_size, random_dim))
 
             # Rótulos indicam que as imagens geradas são "reais"
             g_loss = gan.train_on_batch(noise, np.ones(batch_size))
-            
-            generator_history.append(g_loss)
 
             if batch % sample_interval == 0:
                 # Exibir o progresso
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
-                generator.save_weights(f"{models_dir}/generator_weights.h5")
-                discriminator.save_weights(f"{models_dir}/discriminator_weights.h5")
-                gan.save_weights(f"{models_dir}/gan_weights.h5")
-                
-    plt.plot(discriminator_history)
-    plt.plot(generator_history)
-    plt.title('Model loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Discriminator', 'Generator'], loc='upper left')
-    plt.savefig(f"{current_dir}/gan_loss.png")
-    plt.show()
+                generator.save(f"{models_ft_dir}/generator_model{epoch}.keras")
             
-

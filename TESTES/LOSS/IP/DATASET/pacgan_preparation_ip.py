@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
 # Caminho para o arquivo PCAPNG
-file_path = os.path.join(pcap_dir, 'pkt.ICMP.largeempty.pcap')
+file_path = os.path.join(pcap_dir, 'terceiro_ping.pcap')
 
 def packet_useful_data(packet):
     """Returns the useful data of a packet
@@ -94,16 +94,19 @@ def main():
         
         packet = pkt.frame_raw.value
         packet = packet_useful_data(packet)
-        packet = packet_means(packet)
-        packet = duplicate_and_map_bytes(packet)
+
         
-        if index <= 0.8 * total_packets:
-            dataset["x_train"].append(packet.tolist())
-            dataset["y_train"].append(packet.tolist())
+        if packet[2:4] == '00': # Verifications for ICMP port reachable.
+            packet = packet_means(packet)
+            packet = duplicate_and_map_bytes(packet)
             
-        else:
-            dataset["x_test"].append(packet.tolist())
-            dataset["y_test"].append(packet.tolist())
+            if index <= 0.8 * total_packets:
+                dataset["x_train"].append(packet.tolist())
+                dataset["y_train"].append(packet.tolist())
+                
+            else:
+                dataset["x_test"].append(packet.tolist())
+                dataset["y_test"].append(packet.tolist())
         
         index += 1
         

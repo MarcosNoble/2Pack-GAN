@@ -1,14 +1,12 @@
 from gan_packets_generator import generate_packets_by_gan
-from decoder_pac_gan_ip import decode_packets
+from decoder_pac_gan_dns import decode_packets
 import sys
 import binascii
-from gan_packets_generator import generate_packets_by_gan
-from decoder_pac_gan_ip import decode_packets
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-generated_bytes_dir = os.path.join(current_dir, 'generated_ip_bytes_by_gan')
-generated_packets_dir = os.path.join(current_dir, 'generated_ip_packets_by_gan')
+generated_bytes_dir = os.path.join(current_dir, 'generated_dns_bytes_by_gan')
+generated_packets_dir = os.path.join(current_dir, 'generated_dns_packets_by_gan')
 
 if not os.path.exists(generated_packets_dir):
     os.makedirs(generated_packets_dir)
@@ -91,25 +89,26 @@ def ip_checksum(ip):
 
     return csum
 
-def icmp_checksum(icmp):
-    '''Calculates and returns the ICMP checksum based on the given ICMP Header
+def udp_checksum(udp):
+    '''Calculates and returns the UDP checksum based on the given UDP Header
     
     Args:
-        icmp (string): ICMP Header
+        udp (string): UDP Header
         
     Returns:
-        integer: ICMP checksum
+        integer: UDP checksum
+            
     '''
-    words = splitN(''.join(icmp.split()),4)
+    #split into bytes    
+    words = splitN(''.join(udp.split()),4)
 
     csum = 0
     for word in words:
         csum += int(word, base=16)
-    
 
     csum += (csum >> 16)
     csum = csum & 0xFFFF ^ 0xFFFF
-    
+
     return csum
 
 def generatePcapFile(filename, number_of_packets):
@@ -122,12 +121,12 @@ def generatePcapFile(filename, number_of_packets):
         string: Bytestring of the generated pcap file
     '''
     for i in range(1, number_of_packets + 1):
-        icmp_len = getByteLength(icmp_header_data[i-1])
-        icmp = icmp_header_data[i-1]
-        checksum = icmp_checksum(icmp.replace('XXXX','00 00'))
-        icmp = icmp.replace('XXXX',"%04x"%checksum)
+        udp_len = getByteLength(udp_header_data[i-1])
+        udp = udp_header_data[i-1].replace('XXXX',"%04x"%udp_len)
+        checksum = udp_checksum(udp.replace('YYYY','00 00'))
+        udp = udp.replace('YYYY',"%04x"%checksum)
         
-        ip_len = icmp_len + getByteLength(ipv4_header[i-1])
+        ip_len = udp_len + getByteLength(ipv4_header[i-1])
         ip = ipv4_header[i-1].replace('XXXX',"%04x"%ip_len)
         checksum = ip_checksum(ip.replace('YYYY','00 00'))
         ip = ip.replace('YYYY',"%04x"%checksum)
@@ -139,10 +138,9 @@ def generatePcapFile(filename, number_of_packets):
         pcaph = pcaph.replace('YY YY YY YY',reverse_hex_str)
             
         if i == 1:
-            bytestring = pcap_global_header + pcaph + eth_header + ip + icmp
+            bytestring = pcap_global_header + pcaph + eth_header + ip + udp
         else:
-            bytestring += pcaph + eth_header + ip + icmp
-    
+            bytestring += pcaph + eth_header + ip + udp
     
     output_path = os.path.join(generated_packets_dir, filename)
     
@@ -151,18 +149,18 @@ def generatePcapFile(filename, number_of_packets):
 number_of_packets = int(input("Type the number of packets to generate: "))
 
 ipv4_header = []
-icmp_header_data = []
+udp_header_data = []
 
 for i in range(1, number_of_packets + 1):
-    generate_packets_by_gan(1, generated_bytes_dir)
+    generate_packets_by_gan(number_of_packets, generated_bytes_dir)
 
     literal_lista1, literal_lista2 = decode_packets(generated_bytes_dir)
 
     ipv4_header.append(literal_lista1[0:4] + 'XX' 'XX' + literal_lista1[8:20] + 'YY' 'YY' + literal_lista1[24:40])
-    icmp_header_data.append(literal_lista2[0:4] + 'XX' 'XX' + literal_lista2[8:16] + literal_lista2[48:128])
-            
+    udp_header_data.append(literal_lista2[0:8] + 'XX' 'XX' + 'YY' 'YY' + literal_lista2[16:])
+        
 pcap_name = input("Type the name of the pcap file: ")        
 pcapfile = pcap_name + '.pcap'
-    
+
 generatePcapFile(pcapfile, number_of_packets)
 print("Pcap file generated!")

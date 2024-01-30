@@ -10,11 +10,9 @@ parent_directory = os.path.dirname(current_directory)
 gan_directory = os.path.join(parent_directory, 'GAN')
 sys.path.append(gan_directory)
 
-from gan_ip import wasserstein_loss
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-generator_path = os.path.join(gan_directory, 'models/generator_model50.keras')
+generator_path = os.path.join(gan_directory, 'models/generator_50.keras')
 
 def generate_packets_by_gan(num_images, generated_bytes_dir):
     """Generate packets using a GAN
@@ -26,7 +24,7 @@ def generate_packets_by_gan(num_images, generated_bytes_dir):
         os.makedirs(generated_bytes_dir)
 
     # Carregar o modelo gerador
-    generator = load_model(generator_path, custom_objects={'wasserstein_loss': wasserstein_loss})
+    generator = load_model(generator_path)
 
     # Gerar ruído aleatório para entrada do gerador
     noise = np.random.normal(0.0, 1.0, (num_images, 1024))
