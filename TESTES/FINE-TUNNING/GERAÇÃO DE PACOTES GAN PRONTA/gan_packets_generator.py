@@ -14,7 +14,7 @@ from gan_ip import wasserstein_loss
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-generator_path = os.path.join(gan_directory, 'models_ft_dns/generator_model15.keras')
+generator_path = os.path.join(gan_directory, 'models_ft_dns/generator_model20.keras')
 
 def generate_packets_by_gan(num_images, generated_bytes_dir):
     """Generate packets using a GAN

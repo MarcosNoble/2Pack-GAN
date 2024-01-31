@@ -158,6 +158,8 @@ for i in range(1, number_of_packets + 1):
 
     ipv4_header.append(literal_lista1[0:4] + 'XX' 'XX' + literal_lista1[8:20] + 'YY' 'YY' + literal_lista1[24:40])
     udp_header_data.append(literal_lista2[0:8] + 'XX' 'XX' + 'YY' 'YY' + literal_lista2[16:])
+    
+    print("Packet " + str(i) + " generated!")
         
 pcap_name = input("Type the name of the pcap file: ")        
 pcapfile = pcap_name + '.pcap'

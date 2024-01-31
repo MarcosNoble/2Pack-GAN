@@ -188,8 +188,8 @@ if __name__ == '__main__':
     generator = build_generator(random_dim)
     discriminator = build_discriminator(input_shape)
     
-    generator.load_weights(f"{models_dir}/generator50.weights.h5")
-    discriminator.load_weights(f"{models_dir}/discriminator50.weights.h5")
+    generator.load_weights(f"{models_dir}/generator25.weights.h5")
+    discriminator.load_weights(f"{models_dir}/discriminator25.weights.h5")
     
     # Especificar o número de camadas que deseja congelar no discriminador
     '''n_layers_to_freeze_discriminator = 2  # Ajuste conforme necessário
