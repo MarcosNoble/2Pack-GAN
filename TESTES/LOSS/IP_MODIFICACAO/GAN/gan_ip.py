@@ -29,7 +29,6 @@ def generate_and_save_images(model, test_input, epoch, img_path):
     plt.savefig(f"{img_path}/generated_images_{epoch}.png")
     
         
-        
 @tf.function
 def critic_train_step(generator, critic, real_input_batch, random_dim):
     noise = tf.random.normal([batch_size, random_dim])
@@ -108,7 +107,7 @@ def train(generator, critic, output_images_dir, epochs, num_generate, random_dim
             
                 
         generator.save_model(f"{models_dir}/generator_{epoch + 1}.keras")
-        critic.save_model(f"{models_dir}/critic_{epoch + 1}.keras")
+        #critic.save_model(f"{models_dir}/critic_{epoch + 1}.keras")
         
         generate_and_save_images(generator.get_model(), seed, epoch + 1, output_images_dir)
         
@@ -162,7 +161,7 @@ if __name__ == '__main__':
         
     # Configurações de treinamento
     batch_size = 64
-    epochs = 150 # Número de épocas
+    epochs = 300 # Número de épocas
 
     # Carregar o conjunto de dados
     (x_train, _), (_, _) = load_data_npz()

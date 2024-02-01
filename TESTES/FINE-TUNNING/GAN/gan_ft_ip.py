@@ -5,15 +5,14 @@ from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Fla
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.datasets import mnist
 from data_loader import load_data_npz
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-output_images_dir = os.path.join(current_dir, 'output_images_ft_dns')
+output_images_dir = os.path.join(current_dir, 'output_images_ft_ip')
 
 models_dir = os.path.join(current_dir, 'models')
 
-models_ft_dir = os.path.join(current_dir, 'models_ft_dns')
+models_ft_dir = os.path.join(current_dir, 'models_ft_ip')
 
         
 if not os.path.exists(f"{models_ft_dir}"):

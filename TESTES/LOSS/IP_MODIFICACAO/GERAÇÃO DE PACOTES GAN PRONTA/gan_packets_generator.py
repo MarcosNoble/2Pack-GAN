@@ -12,7 +12,7 @@ sys.path.append(gan_directory)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-generator_path = os.path.join(gan_directory, 'models/generator_50.keras')
+generator_path = os.path.join(gan_directory, 'models/generator_215.keras')
 
 def generate_packets_by_gan(num_images, generated_bytes_dir):
     """Generate packets using a GAN
