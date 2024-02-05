@@ -101,6 +101,31 @@ def dns_capture(pcap_name, num_dns, pcap_folder):
         
     os.system("sudo pkill -2 tcpdump")  # Kill the process
     
+    
+def icmp_dns_capture(pcap_name, num_requests, pcap_folder):
+    """Captures ICMP and DNS packets
+
+    Args:
+        pcap_name (string): Name of the pcap file
+        num_requests (integer): Number of requests
+    """
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 icmp or udp dst port 53 &")  # Start the ICMP and DNS capture process
+    unreachable_domains_file_ip = json.load(open(ud_ip_file_path))
+    unreachable_domains_file_dns = json.load(open(ud_dns_file_path))
+    
+    dns_query = Nslookup(dns_servers=["1.1.1.1"], verbose=False, tcp=False)
+    
+    for index, row in df.iterrows():
+        if row['Root Domain'] in unreachable_domains_file_ip or row['Root Domain'] in unreachable_domains_file_dns:
+            continue
+        else:
+            if ping_ip(row['Root Domain'], num_requests) and nslookup_request(row['Root Domain'], num_requests, dns_query):  # ICMP and DNS
+                print(row['Root Domain'])
+            else:
+                print('Could not ping/DNS the domain: ' + row['Root Domain'])
+                
+    os.system("sudo pkill -2 tcpdump")  # Kill the process
+    
 
 def ping_ip(domain, num_pings):  # ICMP
     """Pings a domain
@@ -112,12 +137,11 @@ def ping_ip(domain, num_pings):  # ICMP
     Returns:
         boolean: True if the domain is reachable, False otherwise
     """
-    for i in range(0, num_pings):
-        response = os.system("ping -c 1 " + domain)
-        if response == 0:
-            return True
-        else:
-            return False
+    response = os.system(f"ping -c {num_pings} {domain}")
+    if response == 0:
+        return True
+    else:
+        return False
     
 
 def nslookup_request(domain, num_dns, dns_query):  # DNS
@@ -145,7 +169,7 @@ def main():
     """Main function
     """
     while True:
-        option = input("Choose the option:\n1 - ICMP\n2 - DNS\n")
+        option = input("Choose the option:\n1 - ICMP\n2 - DNS\n3 - ICMP and DNS\n")
         
         if option == '1':
             num_pings = int(input("Enter the number of pings: "))
@@ -159,6 +183,13 @@ def main():
             pcap_name = input("Enter the name of the pcap file: ") + '.pcap'
             detect_unreachable_domains(option)
             dns_capture(pcap_name, num_dns, pcap_dir)
+            break
+        
+        elif option == '3':
+            num_requests = int(input("Enter the number of requests: "))
+            pcap_name = input("Enter the name of the pcap file: ") + '.pcap'
+            detect_unreachable_domains(option, num_requests)
+            icmp_dns_capture(pcap_name, num_requests, pcap_dir)
             break
         
         else:
