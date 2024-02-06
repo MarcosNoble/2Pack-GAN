@@ -4,7 +4,6 @@ from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Fla
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.datasets import mnist
 from data_loader import load_data_npz
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -268,14 +267,4 @@ if __name__ == '__main__':
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
-                
-    plt.plot(discriminator_history)
-    plt.plot(generator_history)
-    plt.title('Model loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Discriminator', 'Generator'], loc='upper left')
-    plt.savefig(f"{current_dir}/gan_loss.png")
-    plt.show()
-            
 
