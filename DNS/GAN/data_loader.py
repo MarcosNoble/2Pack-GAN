@@ -8,9 +8,9 @@ file_path = os.path.join(dataset_dir, 'dataset_dns.npz')
 
 def load_data_npz():
         """Loads the dataset from a NPZ file
-        
+
         Returns:
-            tuple: Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+                tuple: Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
         """
         with np.load(file_path, allow_pickle=True) as f:
                 x_train, y_train = f["x_train"], f["y_train"]

@@ -20,7 +20,6 @@ def decode_packets(raw_bytes):
     '''    
     packet = np.zeros((n_meios, n_meios), dtype=np.uint8)
 
-    # Percorrer a imagem, calculando a média de cada submatriz de tamanho dxd
     for i in range(0, n, d):
         for j in range(0, n, d):
             packet[int(i/2), int(j/2)] = int((raw_bytes[i:i+d, j:j+d].mean()))

@@ -6,7 +6,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
-# Caminho para o arquivo PCAPNG
 file_path = os.path.join(pcap_dir, 'quinto_dns.pcap')
 
 def packet_useful_data(packet):
@@ -19,7 +18,6 @@ def packet_useful_data(packet):
         string: Useful data of the packet
     """
     return packet[28:]  # DNS
-
 
 def packet_means(packet):
     """Returns the means of the bytes of a packet
@@ -45,7 +43,6 @@ def packet_means(packet):
         
     return packet_with_mean
 
-
 def duplicate_and_map_bytes(byte_digits, n=28, d=2):
     """Duplicates and maps the bytes of a packet
     
@@ -58,16 +55,16 @@ def duplicate_and_map_bytes(byte_digits, n=28, d=2):
         numpy.ndarray: Matrix of bytes
     """
     
-    # Inicializar a matriz n x n com zeros do tipo object
+    # Initialize the n x n matrix with zeros of object type
     matrix = np.zeros((n, n), dtype=object)
 
     i, j = 0, 0
     for byte_digit in byte_digits:
-        # Preencher a submatriz d x d com o valor do byte digitado (como string)
-        value = int(byte_digit, 16)  # Converter a string hexadecimal para inteiro
+        # Fill the d x d submatrix with the entered byte value (as string)
+        value = int(byte_digit, 16)  # Convert the hexadecimal string to integer
         matrix[i:i+d, j:j+d] = value
 
-        # Atualizar os índices para a próxima submatriz
+        # Update the indexes
         j += d
         if j >= n:
             j = 0
@@ -76,7 +73,6 @@ def duplicate_and_map_bytes(byte_digits, n=28, d=2):
                 break
 
     return matrix
-
 
 def main():
     """Main function

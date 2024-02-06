@@ -10,7 +10,6 @@ generated_packets_dir = os.path.join(current_dir, 'generated_ip_packets_by_gan')
 if not os.path.exists(generated_packets_dir):
     os.makedirs(generated_packets_dir)
 
-# Global header for pcap 2.4
 pcap_global_header = ('D4 C3 B2 A1'   
                       '02 00'         #File format major revision (i.e. pcap <2>.4)  
                       '04 00'         #File format minor revision (i.e. pcap 2.<4>)   
@@ -19,7 +18,6 @@ pcap_global_header = ('D4 C3 B2 A1'
                       'FF FF 00 00'     
                       '01 00 00 00')
 
-# pcap packet header that must preface every packet
 pcap_packet_header = ('AA 77 9F 47'     
                       '90 A2 04 00'     
                       'XX XX XX XX'   #Frame Size (little endian) 
@@ -74,7 +72,6 @@ def ip_checksum(ip):
         integer: IP checksum
             
     '''
-    # Split into bytes    
     words = splitN(''.join(ip.split()),4)
 
     csum = 0
@@ -143,7 +140,6 @@ def generatePcapFile(filename, number_of_packets, ipv4_header, icmp_header_data)
     
     writeByteStringToFile(bytestring, output_path)
     
-    
 def main():
     '''Main function to generate packets and pcap file'''
     number_of_packets = int(input("Type the number of packets to generate: "))
@@ -166,7 +162,6 @@ def main():
         
     generatePcapFile(pcapfile, number_of_packets, ipv4_header, icmp_header_data)
     print("Pcap file generated!")
-    
     
 if __name__ == "__main__":
     main()
