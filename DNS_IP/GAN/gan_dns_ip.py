@@ -172,7 +172,7 @@ if __name__ == '__main__':
     x_train = np.expand_dims(x_train, axis=-1)
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
-    batch_size = 64
+    batch_size = 128
     epochs = 50
     sample_interval = 5
 
@@ -203,9 +203,7 @@ if __name__ == '__main__':
 
             g_loss = gan.train_on_batch(noise, np.ones(batch_size))
 
-            if epoch % sample_interval == 0:
+            if batch == 0:
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
-                
-

@@ -16,9 +16,11 @@ def decode_packets(raw_bytes):
         raw_bytes (numpy.ndarray): Raw bytes of the generated packets
         
     Returns:
-        ipv4, udp: A tuple with the IPv4 header and the ICMP header
+        ipv4, udp: A tuple with the IPv4 header and the UDP header
     '''    
     packet = np.zeros((n_meios, n_meios), dtype=np.uint8)
+    
+    raw_bytes = np.array(raw_bytes).reshape((n, n))
 
     for i in range(0, n, d):
         for j in range(0, n, d):

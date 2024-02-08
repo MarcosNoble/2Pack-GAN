@@ -1,3 +1,4 @@
+from curses import raw
 import os
 import numpy as np
 
@@ -19,10 +20,12 @@ def decode_packets(raw_bytes):
         ipv4, icmp: A tuple with the IPv4 header and the ICMP header
     '''    
     packet = np.zeros((n_meios, n_meios), dtype=np.uint8)
+    
+    raw_bytes = np.array(raw_bytes).reshape((n, n))
 
     for i in range(0, n, d):
         for j in range(0, n, d):
-            packet[int(i/2), int(j/2)] = int((raw_bytes[i:i+d, j:j+d].mean()))
+            packet[int(i/2), int(j/2)] = int(raw_bytes[i:i+d, j:j+d].mean())
     
     packet_in_list = []
     

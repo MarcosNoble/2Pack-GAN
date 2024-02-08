@@ -5,7 +5,6 @@ import binascii
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-generated_bytes_dir = os.path.join(current_dir, 'generated_dns_bytes_by_gan')
 generated_packets_dir = os.path.join(current_dir, 'generated_dns_packets_by_gan')
 
 if not os.path.exists(generated_packets_dir):

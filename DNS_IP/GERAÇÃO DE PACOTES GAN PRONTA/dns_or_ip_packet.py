@@ -1,17 +1,15 @@
-from gan_packets_generator import generate_packets_by_gan
-from decoder_pac_gan_dns import decode_packets
+from gan_packets_generator import generate_packet_by_gan
+from decoder_pac_gan_dns_ip import decode_packets
 import sys
 import binascii
 import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-generated_bytes_dir = os.path.join(current_dir, 'generated_dns_bytes_by_gan')
-generated_packets_dir = os.path.join(current_dir, 'generated_dns_packets_by_gan')
+generated_packets_dir = os.path.join(current_dir, 'generated_dns_ip_packets_by_gan')
 
 if not os.path.exists(generated_packets_dir):
     os.makedirs(generated_packets_dir)
 
-#Global header for pcap 2.4
 pcap_global_header = ('D4 C3 B2 A1'   
                       '02 00'         #File format major revision (i.e. pcap <2>.4)  
                       '04 00'         #File format minor revision (i.e. pcap 2.<4>)   
@@ -20,7 +18,6 @@ pcap_global_header = ('D4 C3 B2 A1'
                       'FF FF 00 00'     
                       '01 00 00 00')
 
-#pcap packet header that must preface every packet
 pcap_packet_header = ('AA 77 9F 47'     
                       '90 A2 04 00'     
                       'XX XX XX XX'   #Frame Size (little endian) 
@@ -53,7 +50,6 @@ def writeByteStringToFile(bytestring, filename):
     bitout = open(filename, 'wb')
     bitout.write(bytes)
     
-#Splits the string into a list of tokens every n characters
 def splitN(str1, n):
     '''Splits the string into a list of tokens every n characters
     
@@ -66,7 +62,6 @@ def splitN(str1, n):
     '''
     return [str1[start:start+n] for start in range(0, len(str1), n)]
     
-#Calculates and returns the IP checksum based on the given IP Header
 def ip_checksum(ip):
     '''Calculates and returns the IP checksum based on the given IP Header
     
@@ -77,7 +72,6 @@ def ip_checksum(ip):
         integer: IP checksum
             
     '''
-    #split into bytes    
     words = splitN(''.join(ip.split()),4)
 
     csum = 0
@@ -89,18 +83,17 @@ def ip_checksum(ip):
 
     return csum
 
-def udp_checksum(udp):
-    '''Calculates and returns the UDP checksum based on the given UDP Header
+def protocol_checksum(protocol):
+    '''Calculates and returns the protocol checksum based on the given protocol Header
     
     Args:
-        udp (string): UDP Header
+        protocol (string): protocol Header
         
     Returns:
-        integer: UDP checksum
+        integer: protocol checksum
             
     '''
-    #split into bytes    
-    words = splitN(''.join(udp.split()),4)
+    words = splitN(''.join(protocol.split()),4)
 
     csum = 0
     for word in words:
@@ -111,7 +104,7 @@ def udp_checksum(udp):
 
     return csum
 
-def generatePcapFile(filename, number_of_packets):
+def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_data):
     '''Generates a pcap file based on the given filename
     
     Args:
@@ -121,12 +114,12 @@ def generatePcapFile(filename, number_of_packets):
         string: Bytestring of the generated pcap file
     '''
     for i in range(1, number_of_packets + 1):
-        udp_len = getByteLength(udp_header_data[i-1])
-        udp = udp_header_data[i-1].replace('XXXX',"%04x"%udp_len)
-        checksum = udp_checksum(udp.replace('YYYY','00 00'))
-        udp = udp.replace('YYYY',"%04x"%checksum)
+        protocol_len = getByteLength(protocol_header_data[i-1])
+        protocol = protocol_header_data[i-1].replace('XXXX',"%04x"%protocol_len)
+        checksum = protocol_checksum(protocol.replace('YYYY','00 00'))
+        protocol = protocol.replace('YYYY',"%04x"%checksum)
         
-        ip_len = udp_len + getByteLength(ipv4_header[i-1])
+        ip_len = protocol_len + getByteLength(ipv4_header[i-1])
         ip = ipv4_header[i-1].replace('XXXX',"%04x"%ip_len)
         checksum = ip_checksum(ip.replace('YYYY','00 00'))
         ip = ip.replace('YYYY',"%04x"%checksum)
@@ -138,31 +131,40 @@ def generatePcapFile(filename, number_of_packets):
         pcaph = pcaph.replace('YY YY YY YY',reverse_hex_str)
             
         if i == 1:
-            bytestring = pcap_global_header + pcaph + eth_header + ip + udp
+            bytestring = pcap_global_header + pcaph + eth_header + ip + protocol
         else:
-            bytestring += pcaph + eth_header + ip + udp
+            bytestring += pcaph + eth_header + ip + protocol
     
     output_path = os.path.join(generated_packets_dir, filename)
     
     writeByteStringToFile(bytestring, output_path)
     
-number_of_packets = int(input("Type the number of packets to generate: "))
+def main():
+    '''Main function to generate packets and pcap file'''
+    number_of_packets = int(input("Type the number of packets to generate: "))
 
-ipv4_header = []
-udp_header_data = []
+    ipv4_header = []
+    protocol_header_data = []
 
-for i in range(1, number_of_packets + 1):
-    generate_packets_by_gan(number_of_packets, generated_bytes_dir)
+    for i in range(1, number_of_packets + 1):
+        raw_bytes = generate_packet_by_gan()
 
-    literal_lista1, literal_lista2 = decode_packets(generated_bytes_dir)
+        raw_ipv4, raw_protocol = decode_packets(raw_bytes)
 
-    ipv4_header.append(literal_lista1[0:4] + 'XX' 'XX' + literal_lista1[8:20] + 'YY' 'YY' + literal_lista1[24:40])
-    udp_header_data.append(literal_lista2[0:8] + 'XX' 'XX' + 'YY' 'YY' + literal_lista2[16:])
-    
-    print("Packet " + str(i) + " generated!")
+        ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
+                
+        if ipv4_header[i-1][9:11] == '11':
+            protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
+        else:
+            protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
         
-pcap_name = input("Type the name of the pcap file: ")        
-pcapfile = pcap_name + '.pcap'
+        print("Packet " + str(i) + " generated!")
+            
+    pcap_name = input("Type the name of the pcap file: ")        
+    pcapfile = pcap_name + '.pcap'
 
-generatePcapFile(pcapfile, number_of_packets)
-print("Pcap file generated!")
+    generatePcapFile(pcapfile, number_of_packets, ipv4_header, protocol_header_data)
+    print("Pcap file generated!")
+    
+if __name__ == '__main__':
+    main()
