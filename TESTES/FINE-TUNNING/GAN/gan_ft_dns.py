@@ -1,11 +1,12 @@
 from distutils.command import build
 import os
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU
+from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU, Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.datasets import mnist
+from torch import dropout
 from data_loader import load_data_npz
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -139,7 +140,10 @@ def build_discriminator(input_shape):
     # Segunda camada convolucional com regularização L2
     model.add(Conv2D(128, kernel_size=(4, 4), strides=(2, 2), padding='same', kernel_regularizer=l2(l2_reg), name='conv2'))
     model.add(tf.keras.layers.Activation('relu'))
-
+    
+    # Adiciona uma camada de Dropout
+    model.add(Dropout(0.5))
+    
     # Camada de flatten
     model.add(Flatten(name='flatten'))
 
@@ -227,7 +231,7 @@ if __name__ == '__main__':
     gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
     
     # Configurações de treinamento
-    batch_size = 64
+    batch_size = 32
     epochs = 50 # Número de épocas
     sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
 

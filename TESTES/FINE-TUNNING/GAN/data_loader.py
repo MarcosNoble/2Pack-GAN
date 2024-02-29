@@ -4,7 +4,11 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 dataset_dir = os.path.join(parent_dir, 'DATASET')
-file_path = os.path.join(dataset_dir, 'dataset_ip_copy.npz')
+
+file_name = input("Enter the name of the NPZ file: ")
+file_name += '.npz'
+
+file_path = os.path.join(dataset_dir, file_name)
 
 def load_data_npz():
         """Loads the dataset from a NPZ file

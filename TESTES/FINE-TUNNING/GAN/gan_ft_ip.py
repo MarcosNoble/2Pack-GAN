@@ -226,7 +226,7 @@ if __name__ == '__main__':
     gan.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
     
     # Configurações de treinamento
-    batch_size = 64
+    batch_size = 32
     epochs = 50 # Número de épocas
     sample_interval = 100  # Intervalo para salvar e exibir imagens geradas
 

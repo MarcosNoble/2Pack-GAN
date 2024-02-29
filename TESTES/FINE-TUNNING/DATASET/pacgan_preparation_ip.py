@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
 # Caminho para o arquivo PCAPNG
-file_path = os.path.join(pcap_dir, 'pkt.ICMP.largeempty.pcap')
+file_path = os.path.join(pcap_dir, 'umpingparaft.pcap')
 
 def packet_useful_data(packet):
     """Returns the useful data of a packet
@@ -80,17 +80,19 @@ def duplicate_and_map_bytes(byte_digits, n=28, d=2):
 
 def main():
     """Main function
-    """
-    total_packets = int(input("How many packets do you want to use? "))
-    
+    """    
     dataset = {"x_train": [], "y_train": [], "x_test": [], "y_test": []}
     
     pcap = pyshark.FileCapture(file_path, use_json=True, include_raw=True)
     
+    total_packets = 0
+    for pkt in pcap:
+        total_packets += 1
+            
     index = 0
     
     for pkt in pcap:
-        print(index)
+        print(f"Packet {index + 1} of {total_packets}")
         
         packet = pkt.frame_raw.value
         packet = packet_useful_data(packet)
@@ -110,7 +112,7 @@ def main():
         
         index += 1
         
-    np.savez(os.path.join(current_dir, 'dataset_ip.npz'), **dataset)
+    np.savez(os.path.join(current_dir, 'dataset_finetunning_ip.npz'), **dataset)
     
 if __name__ == "__main__":
     main()

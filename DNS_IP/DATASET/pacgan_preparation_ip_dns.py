@@ -6,7 +6,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
-file_path = os.path.join(pcap_dir, 'aaaaaaAGORASIMICMPDNS.pcap')
 
 def packet_useful_data(packet):
     """Returns the useful data of a packet
@@ -77,16 +76,23 @@ def duplicate_and_map_bytes(byte_digits, n=28, d=2):
 def main():
     """Main function
     """
-    total_packets = int(input("How many packets do you want to use? "))
+    pcap_name = input("Enter the name of the pcap file: ")
+    pcap_name = pcap_name + '.pcap'
+    
+    pcap_path = os.path.join(pcap_dir, pcap_name)
     
     dataset = {"x_train": [], "y_train": [], "x_test": [], "y_test": []}
     
-    pcap = pyshark.FileCapture(file_path, use_json=True, include_raw=True)
+    pcap = pyshark.FileCapture(pcap_path, use_json=True, include_raw=True)
     
+    total_packets = 0
+    for pkt in pcap:
+        total_packets += 1
+        
     index = 0
     
     for pkt in pcap:
-        print(index)
+        print(f"Packet {index + 1} of {total_packets}")
         
         packet = pkt.frame_raw.value
         packet = packet_useful_data(packet)
@@ -106,7 +112,10 @@ def main():
         
         index += 1
         
-    np.savez(os.path.join(current_dir, 'dataset_dns_ip.npz'), **dataset)
+    npz_file = input("Enter the name of the npz file: ")
+    npz_file = npz_file + '.npz'
+        
+    np.savez(os.path.join(current_dir, npz_file), **dataset)
     
 if __name__ == "__main__":
     main()
