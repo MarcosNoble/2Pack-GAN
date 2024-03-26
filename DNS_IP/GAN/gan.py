@@ -7,14 +7,25 @@ from tensorflow.keras.optimizers import Adam
 from data_loader import load_data_npz
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 output_images_dir = os.path.join(current_dir, 'output_images')
 
 models_dir = os.path.join(current_dir, 'models')
 
+weights_dir = os.path.join(current_dir, 'weights')
+
+loss_dir = os.path.join(current_dir, 'loss')
+
 if not os.path.exists(f"{models_dir}"):
         os.makedirs(f"{models_dir}")
+        
+if not os.path.exists(f"{weights_dir}"):
+        os.makedirs(f"{weights_dir}"),
+        
+if not os.path.exists(f"{loss_dir}"):
+        os.makedirs(f"{loss_dir}")
 
 def compute_gradient_penalty(real_images, fake_images):
     """Calculates the gradient penalty for a batch of "real" and "fake" images, as a loss function for the discriminator.
@@ -175,6 +186,9 @@ if __name__ == '__main__':
     batch_size = 128
     epochs = 50
     sample_interval = 5
+    
+    discriminator_loss = []
+    generator_loss = []
 
     for epoch in range(epochs + 1):
         for batch in range(x_train.shape[0] // batch_size):
@@ -207,3 +221,17 @@ if __name__ == '__main__':
                 print(f'Epoch {epoch}/{epochs} | Batch {batch}/{x_train.shape[0] // batch_size} | D loss: {np.mean(d_loss):.4f} | G loss: {np.mean(g_loss):.4f}')
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
+                
+                generator.save_weights(f"{weights_dir}/generator/generator_weights{epoch}.weights.h5")
+                discriminator.save_weights(f"{weights_dir}/discriminator/discriminator_weights{epoch}.weights.h5")
+                gan.save_weights(f"{weights_dir}/gan/gan_weights{epoch}.weights.h5")
+                
+        discriminator_loss.append(d_loss)
+        generator_loss.append(g_loss)
+        
+    # Salvar o loss em json
+    with open(f"{loss_dir}/discriminator_loss.json", "w") as f:
+        json.dump(discriminator_loss, f)
+        
+    with open(f"{loss_dir}/generator_loss.json", "w") as f:
+        json.dump(generator_loss, f)

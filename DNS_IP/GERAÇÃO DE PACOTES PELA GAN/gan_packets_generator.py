@@ -9,7 +9,7 @@ parent_directory = os.path.dirname(current_directory)
 gan_directory = os.path.join(parent_directory, 'GAN')
 sys.path.append(gan_directory)
 
-from gan_dns_ip import wasserstein_loss
+from gan import wasserstein_loss
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 

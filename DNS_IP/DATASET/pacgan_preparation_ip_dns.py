@@ -5,6 +5,10 @@ import pyshark
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
+npz_dir = os.path.join(parent_dir, 'NPZ')
+
+if not os.path.exists(f"{npz_dir}"):
+    os.makedirs(f"{npz_dir}")
 
 
 def packet_useful_data(packet):
@@ -115,7 +119,7 @@ def main():
     npz_file = input("Enter the name of the npz file: ")
     npz_file = npz_file + '.npz'
         
-    np.savez(os.path.join(current_dir, npz_file), **dataset)
+    np.savez(os.path.join(npz_dir, npz_file), **dataset)
     
 if __name__ == "__main__":
     main()
