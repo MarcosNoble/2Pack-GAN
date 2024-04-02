@@ -15,29 +15,30 @@ output_images_dir = os.path.join(current_dir, 'output_images')
 models_dir = os.path.join(current_dir, 'models')
 
 weights_dir = os.path.join(current_dir, 'weights')
+generator_weights_dir = os.path.join(weights_dir, 'generator')
+discriminator_weights_dir = os.path.join(weights_dir, 'discriminator')
+gan_weights_dir = os.path.join(weights_dir, 'gan')
 
 loss_dir = os.path.join(current_dir, 'loss')
-generator_loss_dir = os.path.join(loss_dir, 'generator')
-discriminator_loss_dir = os.path.join(loss_dir, 'discriminator')
-gan_loss_dir = os.path.join(loss_dir, 'gan')
 
 if not os.path.exists(f"{models_dir}"):
         os.makedirs(f"{models_dir}")
         
 if not os.path.exists(f"{weights_dir}"):
-        os.makedirs(f"{weights_dir}"),
+        os.makedirs(f"{weights_dir}")
+        
+if not os.path.exists(f"{generator_weights_dir}"):
+        os.makedirs(f"{generator_weights_dir}")
+        
+if not os.path.exists(f"{discriminator_weights_dir}"):
+        os.makedirs(f"{discriminator_weights_dir}")    
+        
+if not os.path.exists(f"{gan_weights_dir}"):
+        os.makedirs(f"{gan_weights_dir}")
         
 if not os.path.exists(f"{loss_dir}"):
         os.makedirs(f"{loss_dir}")
         
-if not os.path.exists(f"{generator_loss_dir}"):
-        os.makedirs(f"{generator_loss_dir}")
-        
-if not os.path.exists(f"{discriminator_loss_dir}"):
-        os.makedirs(f"{discriminator_loss_dir}")    
-        
-if not os.path.exists(f"{gan_loss_dir}"):
-        os.makedirs(f"{gan_loss_dir}")
 
 def compute_gradient_penalty(real_images, fake_images):
     """Calculates the gradient penalty for a batch of "real" and "fake" images, as a loss function for the discriminator.
@@ -234,16 +235,16 @@ if __name__ == '__main__':
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
                 
-                generator.save_weights(f"{generator_loss_dir}/generator_weights{epoch}.weights.h5")
-                discriminator.save_weights(f"{discriminator_loss_dir}/discriminator_weights{epoch}.weights.h5")
-                gan.save_weights(f"{gan_loss_dir}/gan_weights{epoch}.weights.h5")
+                generator.save_weights(f"{generator_weights_dir}/generator_weights{epoch}.weights.h5")
+                discriminator.save_weights(f"{discriminator_weights_dir}/discriminator_weights{epoch}.weights.h5")
+                gan.save_weights(f"{gan_weights_dir}/gan_weights{epoch}.weights.h5")
                 
-        discriminator_loss.append(d_loss)
-        generator_loss.append(g_loss)
+        discriminator_loss.append(float(np.mean(d_loss)))
+        generator_loss.append(float(np.mean(g_loss)))
         
-    # Salvar o loss em json
+    # Save the loss in json
     with open(f"{loss_dir}/discriminator_loss.json", "w") as f:
         json.dump(discriminator_loss, f)
-        
+
     with open(f"{loss_dir}/generator_loss.json", "w") as f:
         json.dump(generator_loss, f)

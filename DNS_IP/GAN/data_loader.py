@@ -4,6 +4,7 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 dataset_dir = os.path.join(parent_dir, 'DATASET')
+npz_dir = os.path.join(dataset_dir, 'NPZ')
 
 def load_data_npz():
         """Loads the dataset from a NPZ file
@@ -13,7 +14,7 @@ def load_data_npz():
         """
         file_name = input("Enter the name of the NPZ file: ")
         file_name = file_name + ".npz"
-        file_path = os.path.join(dataset_dir, file_name)
+        file_path = os.path.join(npz_dir, file_name)
         
         with np.load(file_path, allow_pickle=True) as f:
                 x_train, y_train = f["x_train"], f["y_train"]

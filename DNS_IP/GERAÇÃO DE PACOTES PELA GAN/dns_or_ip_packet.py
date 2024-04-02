@@ -142,12 +142,14 @@ def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_d
 def main():
     '''Main function to generate packets and pcap file'''
     number_of_packets = int(input("Type the number of packets to generate: "))
+    
+    generator_option = input("Choose the generator model: \n1 - Generator model \n2 - Generator model FT\n")
 
     ipv4_header = []
     protocol_header_data = []
 
     for i in range(1, number_of_packets + 1):
-        raw_bytes = generate_packet_by_gan()
+        raw_bytes = generate_packet_by_gan(generator_option)
 
         raw_ipv4, raw_protocol = decode_packets(raw_bytes)
 

@@ -12,15 +12,28 @@ sys.path.append(gan_directory)
 from gan import wasserstein_loss
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
+generator_pre_trained_dir = os.path.join(gan_directory, 'models')
 
-generator_path = os.path.join(gan_directory, 'models/generator_model20.keras')
+parent_dir = os.path.dirname(current_dir)
+grandpa_dir = os.path.dirname(parent_dir)
+FINE_TUNING_dir = os.path.join(grandpa_dir, 'FINE-TUNING')
+NOVO_FINE_TUNING_dir = os.path.join(FINE_TUNING_dir, 'NOVO FINE-TUNING')
+ft_models_dir = os.path.join(NOVO_FINE_TUNING_dir, 'models')
 
-def generate_packet_by_gan():
+def generate_packet_by_gan(generator_option):
     '''Generate packets using GAN
     
     Returns:
         packet: Generated packet
-    '''
+    '''    
+    if generator_option == '1':
+        generator_path = os.path.join(generator_pre_trained_dir, 'generator_model50.keras')
+    elif generator_option == '2':
+        generator_path = os.path.join(ft_models_dir, 'generator_model75.keras')
+    else:
+        print("Invalid option!")
+        return
+       
     generator = load_model(generator_path, custom_objects={'wasserstein_loss': wasserstein_loss})
 
     noise = np.random.normal(0.0, 1.0, (1, 1024))

@@ -4,8 +4,10 @@ import pyshark
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
+
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
-npz_dir = os.path.join(parent_dir, 'NPZ')
+
+npz_dir = os.path.join(current_dir, 'NPZ')
 
 if not os.path.exists(f"{npz_dir}"):
     os.makedirs(f"{npz_dir}")
