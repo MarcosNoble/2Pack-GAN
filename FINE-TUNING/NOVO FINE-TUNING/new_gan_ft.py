@@ -4,11 +4,11 @@ from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Fla
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
-from torch import dropout
 from data_loader import load_data_npz
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 output_images_dir = os.path.join(current_dir, 'output_images')
@@ -16,6 +16,13 @@ output_images_dir = os.path.join(current_dir, 'output_images')
 models_dir = os.path.join(current_dir, 'models')
 
 loss_dir = os.path.join(current_dir, 'loss')
+
+parent_dir = os.path.dirname(current_dir)
+grandpa_dir = os.path.dirname(parent_dir)
+DNS_IP_directory = os.path.join(grandpa_dir, 'DNS_IP')
+GAN_directory = os.path.join(DNS_IP_directory, 'GAN')
+pre_trained_models_weights_dir = os.path.join(GAN_directory, 'weights')
+
 
 if not os.path.exists(f"{models_dir}"):
         os.makedirs(f"{models_dir}")
@@ -110,7 +117,7 @@ def build_discriminator(input_shape):
     Returns:
         Sequential: Discriminator model
     """
-    model = Sequential()
+    model = tf.keras.Sequential()
 
     model.add(Conv2D(64, kernel_size=(4, 4), strides=(2, 2), padding='same', input_shape=input_shape, kernel_regularizer=l2(l2_reg), name='conv1'))
     model.add(tf.keras.layers.Activation('relu'))
@@ -165,12 +172,21 @@ if __name__ == '__main__':
 
     generator = build_generator(random_dim)
     discriminator = build_discriminator(input_shape)
+    
+    generator.load_weights(f"{pre_trained_models_weights_dir}/generator/generator_weights50.weights.h5")
+    discriminator.load_weights(f"{pre_trained_models_weights_dir}/discriminator/discriminator_weights50.weights.h5")
+    
+    # discriminator.layers[0].trainable = False
+    # discriminator.layers[3].trainable = False
+    # discriminator.layers[6].trainable = False
+        
+    discriminator.summary()
 
     generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
     discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
 
     discriminator.trainable = False 
-
+    
     gan_input = tf.keras.Input(shape=(random_dim,))
     x = generator(gan_input)
     gan_output = discriminator(x)
@@ -182,9 +198,8 @@ if __name__ == '__main__':
     x_train = np.expand_dims(x_train, axis=-1)
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
-    batch_size = 128
+    batch_size = 8
     epochs = 50
-    sample_interval = 5
     
     discriminator_loss = []
     generator_loss = []
@@ -198,8 +213,11 @@ if __name__ == '__main__':
                 noise = np.random.normal(0, 1, (batch_size, random_dim))
                 fake_imgs = generator.predict(noise)
 
+                # discriminator.layers[3].trainable = True
+                # discriminator.layers[6].trainable = True
                 discriminator.trainable = True
-
+                # discriminator.layers[6].trainable = False
+                                
                 valid = np.ones((batch_size, 1))
                 fake = -np.ones((batch_size, 1))
 
@@ -211,6 +229,7 @@ if __name__ == '__main__':
 
                 d_loss += gp
                 discriminator.trainable = False
+                
 
             noise = np.random.normal(0, 1, (batch_size, random_dim))
 
@@ -221,9 +240,12 @@ if __name__ == '__main__':
                 save_generated_images(epoch, generator, batch)
                 generator.save(f"{models_dir}/generator_model{epoch}.keras")
                 
-    # Salvar o loss em json
+        discriminator_loss.append(float(np.mean(d_loss)))
+        generator_loss.append(float(np.mean(g_loss)))
+                
+    # Save the loss in json
     with open(f"{loss_dir}/discriminator_loss.json", "w") as f:
         json.dump(discriminator_loss, f)
-        
+
     with open(f"{loss_dir}/generator_loss.json", "w") as f:
         json.dump(generator_loss, f)

@@ -83,7 +83,7 @@ def main():
     """Main function
     """
     pcap_name = input("Enter the name of the pcap file: ")
-    pcap_name = pcap_name + '.pcap'
+    pcap_name = pcap_name + '.pcapng'
     
     pcap_path = os.path.join(pcap_dir, pcap_name)
     
@@ -94,6 +94,7 @@ def main():
     total_packets = 0
     for pkt in pcap:
         total_packets += 1
+        print(total_packets)
         
     index = 0
     
@@ -104,11 +105,11 @@ def main():
         packet = packet_useful_data(packet)
 
         
-        if packet[2:4] == '00': # Verifications for ICMP port reachable.
+        if packet[0:2] == '45' and packet[2:4] == '00': # Verifications for ICMP port reachable.
             packet = packet_means(packet)
             packet = duplicate_and_map_bytes(packet)
             
-            if index <= 0.8 * total_packets:
+            if index > 0:
                 dataset["x_train"].append(packet.tolist())
                 dataset["y_train"].append(packet.tolist())
                 
@@ -117,6 +118,8 @@ def main():
                 dataset["y_test"].append(packet.tolist())
         
         index += 1
+        if index == 200000:
+            break
         
     npz_file = input("Enter the name of the npz file: ")
     npz_file = npz_file + '.npz'
