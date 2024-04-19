@@ -29,7 +29,7 @@ def generate_packet_by_gan(generator_option):
     if generator_option == '1':
         generator_path = os.path.join(generator_pre_trained_dir, 'generator_model50.keras')
     elif generator_option == '2':
-        generator_path = os.path.join(ft_models_dir, 'generator_model50.keras')
+        generator_path = os.path.join(ft_models_dir, 'generator_model34.keras')
     else:
         print("Invalid option!")
         return

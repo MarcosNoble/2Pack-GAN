@@ -1,4 +1,4 @@
-from gan_packets_generator import generate_packet_by_gan
+from gan_packets_generator import NOVO_FINE_TUNING_dir, generate_packet_by_gan
 from decoder_pac_gan_dns_ip import decode_packets
 import sys
 import binascii
@@ -6,6 +6,13 @@ import os
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 generated_packets_dir = os.path.join(current_dir, 'generated_dns_ip_packets_by_gan')
+
+DNS_IP_dir = os.path.dirname(current_dir)
+PAC_GAN_dir = os.path.dirname(DNS_IP_dir,)
+FINE_TUNNING_dir = os.path.join(PAC_GAN_dir, 'FINE-TUNING')
+NOVO_FINE_TUNING_dir = os.path.join(FINE_TUNNING_dir, 'NOVO FINE-TUNING')
+output_images_dir = os.path.join(NOVO_FINE_TUNING_dir, 'output_images')
+
 
 if not os.path.exists(generated_packets_dir):
     os.makedirs(generated_packets_dir)
@@ -104,7 +111,7 @@ def protocol_checksum(protocol):
 
     return csum
 
-def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_data):
+def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_data, training=False, epoch_path=None):
     '''Generates a pcap file based on the given filename
     
     Args:
@@ -135,9 +142,33 @@ def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_d
         else:
             bytestring += pcaph + eth_header + ip + protocol
     
-    output_path = os.path.join(generated_packets_dir, filename)
+    if training:
+        output_path = os.path.join(epoch_path, filename)
+    else:
+        output_path = os.path.join(generated_packets_dir, filename)
     
     writeByteStringToFile(bytestring, output_path)
+    
+
+def save_packets_on_training(image, filename, epoch):
+    epoch_path = os.path.join(output_images_dir, f"generated_images_{epoch}")
+    
+    ipv4_header = []
+    protocol_header_data = []
+    
+    raw_ipv4, raw_protocol = decode_packets(image)
+
+    ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
+                
+    if ipv4_header[9:11] == '11':
+        protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
+    else:
+        protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
+                
+    pcapfile = filename + '.pcap'
+
+    generatePcapFile(pcapfile, 1, ipv4_header, protocol_header_data, True, epoch_path)
+    print("Pcap file generated!")
     
 def main():
     '''Main function to generate packets and pcap file'''

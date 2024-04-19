@@ -1,13 +1,17 @@
 import os
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU
+from tensorflow.keras.layers import Dense, Reshape, Conv2DTranspose, Conv2D, Flatten, LeakyReLU, Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
+from torch import dropout
 from data_loader import load_data_npz
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import time
+
+start_time = time.time()
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 output_images_dir = os.path.join(current_dir, 'output_images')
@@ -105,6 +109,8 @@ def build_generator(random_dim):
 
     model.add(Dense(64, input_dim=random_dim, activation=activation, kernel_regularizer=l2(l2_reg)))
     model.add(Dense(1024, activation=activation, kernel_regularizer=l2(l2_reg)))
+    model.add(Dropout(0.3))
+
     model.add(Dense(12544, activation=activation, kernel_regularizer=l2(l2_reg)))
 
     model.add(Reshape((7, 7, 256)))
@@ -130,6 +136,8 @@ def build_discriminator(input_shape):
 
     model.add(Conv2D(64, kernel_size=(4, 4), strides=(2, 2), padding='same', input_shape=input_shape, kernel_regularizer=l2(l2_reg), name='conv1'))
     model.add(tf.keras.layers.Activation('relu'))
+    
+    model.add(Dropout(0.3))
 
     model.add(Conv2D(128, kernel_size=(4, 4), strides=(2, 2), padding='same', kernel_regularizer=l2(l2_reg), name='conv2'))
     model.add(tf.keras.layers.Activation('relu'))
@@ -196,7 +204,7 @@ if __name__ == '__main__':
     x_train = np.expand_dims(x_train, axis=-1)
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
-    batch_size = 128
+    batch_size = 1024
     epochs = 50
     sample_interval = 5
     
@@ -239,6 +247,9 @@ if __name__ == '__main__':
                 discriminator.save_weights(f"{discriminator_weights_dir}/discriminator_weights{epoch}.weights.h5")
                 gan.save_weights(f"{gan_weights_dir}/gan_weights{epoch}.weights.h5")
                 
+                current_time = time.time() - start_time
+                print(current_time)
+                
         discriminator_loss.append(float(np.mean(d_loss)))
         generator_loss.append(float(np.mean(g_loss)))
         
@@ -248,3 +259,8 @@ if __name__ == '__main__':
 
     with open(f"{loss_dir}/generator_loss.json", "w") as f:
         json.dump(generator_loss, f)
+        
+    end_time = time.time()  # End the timer
+    execution_time = end_time - start_time
+    
+    print(execution_time)
