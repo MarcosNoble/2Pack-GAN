@@ -1,4 +1,3 @@
-from curses import raw
 import os
 import numpy as np
 
@@ -34,7 +33,17 @@ def decode_packets(raw_bytes):
             packet_in_list.append((str(hex(int(packet[i][j] / 16)).replace('0x', '')) + str(hex(int(packet[i][j+1] / 16)).replace('0x', ''))))
 
     ipv4 = packet_in_list[0:20]
-    protocol = packet_in_list[20:84]
+    end_protocol = 52
+    
+    if packet_in_list[9] == '11':
+        end_protocol = packet_in_list[25] # DNS, TODO
+        end_protocol = int(int(end_protocol, 16)) + 20
+    elif packet_in_list[9] == '06':
+        end_protocol = packet_in_list[32] # TCP
+        end_protocol = int(int(end_protocol, 16) / 4) + 20
+        
+
+    protocol = packet_in_list[20:end_protocol]
 
     ipv4 = ''.join(ipv4)
     protocol = ''.join(protocol)

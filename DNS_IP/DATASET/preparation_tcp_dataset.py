@@ -22,7 +22,7 @@ def packet_useful_data(packet):
     Returns:
         string: Useful data of the packet
     """
-    return packet[28:196]  # ICMP
+    return packet[28:148]  # TCP
 
 def packet_means(packet):
     """Returns the means of the bytes of a packet
@@ -91,20 +91,25 @@ def main():
     
     pcap = pyshark.FileCapture(pcap_path, use_json=True, include_raw=True)
     
+    total_packets = 0
+    for pkt in pcap:
+        total_packets += 1
+        print(total_packets)
         
     index = 0
     
     for pkt in pcap:
-        print(f"Packet {index + 1}")
+        print(f"Packet {index + 1} of {total_packets}")
         
         packet = pkt.frame_raw.value
         packet = packet_useful_data(packet)
 
-        if packet[2:4] == '00' and packet[18:20] == '11' and (packet[46:48] == '35' or packet[52:54] == '35'): # Verifications for ICMP port reachable.
+        
+        if packet[2:4] == '00': # Verifications for TCP port reachable.
             packet = packet_means(packet)
             packet = duplicate_and_map_bytes(packet)
             
-            if index >= 0:
+            if index > 0:
                 dataset["x_train"].append(packet.tolist())
                 dataset["y_train"].append(packet.tolist())
                 
@@ -112,7 +117,7 @@ def main():
                 dataset["x_test"].append(packet.tolist())
                 dataset["y_test"].append(packet.tolist())
         
-            index += 1
+        index += 1
         if index == 200000:
             break
         

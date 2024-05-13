@@ -1,5 +1,6 @@
-from gan_packets_generator import NOVO_FINE_TUNING_dir, generate_packet_by_gan
+from genericpath import exists
 from decoder_pac_gan_dns_ip import decode_packets
+from gan_packets_generator import generate_packet_by_gan
 import sys
 import binascii
 import os
@@ -11,8 +12,8 @@ DNS_IP_dir = os.path.dirname(current_dir)
 PAC_GAN_dir = os.path.dirname(DNS_IP_dir,)
 FINE_TUNNING_dir = os.path.join(PAC_GAN_dir, 'FINE-TUNING')
 NOVO_FINE_TUNING_dir = os.path.join(FINE_TUNNING_dir, 'NOVO FINE-TUNING')
-output_images_dir = os.path.join(NOVO_FINE_TUNING_dir, 'output_images')
-
+GAN_dir = os.path.join(DNS_IP_dir, 'GAN')
+output_images_dir = os.path.join(GAN_dir, 'output_images')
 
 if not os.path.exists(generated_packets_dir):
     os.makedirs(generated_packets_dir)
@@ -179,10 +180,10 @@ def main():
     ipv4_header = []
     protocol_header_data = []
 
+    raw_bytes = generate_packet_by_gan(generator_option, number_of_packets)
+    
     for i in range(1, number_of_packets + 1):
-        raw_bytes = generate_packet_by_gan(generator_option)
-
-        raw_ipv4, raw_protocol = decode_packets(raw_bytes)
+        raw_ipv4, raw_protocol = decode_packets(raw_bytes[i-1])
 
         ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
                 
@@ -190,9 +191,10 @@ def main():
             protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
         else:
             protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
-        
-        print("Packet " + str(i) + " generated!")
             
+        print("Packet " + str(i) + " generated!")
+
+   
     pcap_name = input("Type the name of the pcap file: ")        
     pcapfile = pcap_name + '.pcap'
 

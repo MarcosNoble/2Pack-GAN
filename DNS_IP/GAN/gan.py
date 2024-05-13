@@ -10,18 +10,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import time
+import sys
 
-start_time = time.time()
+start_time = time.time() / 60
+time_per_epoch = []
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 output_images_dir = os.path.join(current_dir, 'output_images')
 
 models_dir = os.path.join(current_dir, 'models')
 
+parent_dir = os.path.dirname(current_dir)
+grandpa_dir = os.path.dirname(parent_dir)
+DNS_IP_directory = os.path.join(grandpa_dir, 'DNS_IP')
+GERACAO_DE_PACOTES_PELA_GAN_directory = os.path.join(DNS_IP_directory, 'GERAÇÃO_DE_PACOTES_PELA_GAN')
+
 weights_dir = os.path.join(current_dir, 'weights')
 generator_weights_dir = os.path.join(weights_dir, 'generator')
 discriminator_weights_dir = os.path.join(weights_dir, 'discriminator')
-gan_weights_dir = os.path.join(weights_dir, 'gan')
+gan_weights_dir = os.path.join(weights_dir, 'GAN')
 
 loss_dir = os.path.join(current_dir, 'loss')
 
@@ -148,7 +155,7 @@ def build_discriminator(input_shape):
 
     return model
 
-def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024):
+def save_generated_images(epoch, generator, batch, examples=1, random_dim=1024):
     """Saves generated images to a file.
     
     Args:
@@ -158,6 +165,9 @@ def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024)
         examples (integer): Number of examples
         random_dim (integer): Dimension of the latent vector
     """
+    sys.path.append(GERACAO_DE_PACOTES_PELA_GAN_directory)
+    from dns_or_ip_packet import save_packets_on_training
+    
     noise = np.random.normal(0, 1, (examples, random_dim))
 
     generated_images = generator.predict(noise)
@@ -175,6 +185,8 @@ def save_generated_images(epoch, generator, batch, examples=15, random_dim=1024)
         plt.axis('off')
         
     plt.savefig(f"{output_images_dir}/generated_images_{epoch}/generated_image_{batch}.png")
+    save_packets_on_training(generated_images, f"generated_images_{batch}", epoch)
+
         
 if __name__ == '__main__':
     l2_reg = 2.5e-5
@@ -191,7 +203,7 @@ if __name__ == '__main__':
     generator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1))
     discriminator.compile(loss=wasserstein_loss, optimizer=Adam(learning_rate, beta_1=beta1), metrics=['accuracy'])
 
-    discriminator.trainable = False 
+    discriminator.trainable = False
 
     gan_input = tf.keras.Input(shape=(random_dim,))
     x = generator(gan_input)
@@ -204,7 +216,7 @@ if __name__ == '__main__':
     x_train = np.expand_dims(x_train, axis=-1)
     x_train = (x_train / 255.0) * 2.0 - 1.0
     
-    batch_size = 1024
+    batch_size = 64
     epochs = 50
     sample_interval = 5
     
@@ -212,6 +224,7 @@ if __name__ == '__main__':
     generator_loss = []
 
     for epoch in range(epochs + 1):
+        print(x_train.shape[0] // batch_size)
         for batch in range(x_train.shape[0] // batch_size):
             for _ in range(5):
                 idx = np.random.randint(0, x_train.shape[0], batch_size)
@@ -247,7 +260,11 @@ if __name__ == '__main__':
                 discriminator.save_weights(f"{discriminator_weights_dir}/discriminator_weights{epoch}.weights.h5")
                 gan.save_weights(f"{gan_weights_dir}/gan_weights{epoch}.weights.h5")
                 
-                current_time = time.time() - start_time
+                if epoch == 0:
+                    current_time = (time.time() - start_time) / 60
+                else:
+                    current_time = (time.time() - current_time) / 60
+                time_per_epoch.append(current_time)
                 print(current_time)
                 
         discriminator_loss.append(float(np.mean(d_loss)))
@@ -260,7 +277,11 @@ if __name__ == '__main__':
     with open(f"{loss_dir}/generator_loss.json", "w") as f:
         json.dump(generator_loss, f)
         
-    end_time = time.time()  # End the timer
-    execution_time = end_time - start_time
+    end_time = time.time()
+    execution_time = (end_time - start_time) / 60
+    time_per_epoch.append(execution_time)
+    
+    with open(f"{loss_dir}/time_per_epoch.json", "w") as f:
+        json.dump(time_per_epoch, f)
     
     print(execution_time)
