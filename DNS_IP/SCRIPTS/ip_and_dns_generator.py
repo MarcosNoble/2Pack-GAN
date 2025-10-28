@@ -7,6 +7,9 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_directory)
 pcap_dir = os.path.join(parent_dir, 'PCAPS')
 
+# current_directory = os.path.dirname(os.path.abspath(__file__))
+# pcap_dir = current_directory # <-- AGORA SALVA NA PASTA ATUAL
+
 csv_file_path = os.path.join(current_directory, 'top500Domains.csv')
 
 ud_ip_file_path = os.path.join(current_directory, 'unreachable_domains_ip.json')
@@ -63,7 +66,7 @@ def icmp_capture(pcap_name, num_pings, pcap_folder):
         pcap_name (string): Name of the pcap file
         num_pings (integer): Number of pings
     """
-    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 icmp &")  # Start the ICMP capture process
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i enp0s3 icmp &")  # Start the ICMP capture process
     unreachable_domains_file_ip = json.load(open(ud_ip_file_path))
     
     for index, row in df.iterrows():
@@ -85,7 +88,7 @@ def dns_capture(pcap_name, num_dns, pcap_folder):
         pcap_name (string): Name of the pcap file
         num_dns (integer): Number of DNS requests
     """
-    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 udp dst port 53 &")  # Start the DNS capture process
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i enp0s3 udp dst port 53 &")  # Start the DNS capture process
     unreachable_domains_file_dns = json.load(open(ud_dns_file_path))
     
     dns_query = Nslookup(dns_servers=["1.1.1.1"], verbose=False, tcp=False)
@@ -109,7 +112,7 @@ def icmp_dns_capture(pcap_name, num_requests, pcap_folder):
         pcap_name (string): Name of the pcap file
         num_requests (integer): Number of requests
     """
-    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i eth0 icmp or udp dst port 53 &")  # Start the ICMP and DNS capture process
+    os.system(f"sudo tcpdump -w {os.path.join(pcap_folder, pcap_name)} -i enp0s3 icmp or udp dst port 53 &")  # Start the ICMP and DNS capture process
     unreachable_domains_file_ip = json.load(open(ud_ip_file_path))
     unreachable_domains_file_dns = json.load(open(ud_dns_file_path))
     
