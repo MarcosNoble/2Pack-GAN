@@ -213,7 +213,8 @@ def save_generated_images(epoch, generator, batch, examples=10, random_dim=1024)
         random_dim (integer): Dimension of the latent vector
     """
     sys.path.append(GERACAO_DE_PACOTES_PELA_GAN_directory)
-    from packets_generation import save_packets_on_training
+    # from packets_generation import save_packets_on_training
+    from dns_or_ip_packet import save_packets_on_training
     
     noise = np.random.normal(0, 1, (examples, random_dim))
 
@@ -235,6 +236,7 @@ def save_generated_images(epoch, generator, batch, examples=10, random_dim=1024)
         
     plt.savefig(f"{output_images_dir}/generated_images_{epoch}/generated_image_{batch}.png")
     save_packets_on_training(generated_images, f"generated_images_{batch}", epoch, examples)
+    # save_packets_on_training(generated_images, f"generated_images_{batch}", epoch)
     plt.close()
     
     

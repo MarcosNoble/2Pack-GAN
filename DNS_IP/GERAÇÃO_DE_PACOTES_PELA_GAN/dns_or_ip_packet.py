@@ -151,26 +151,51 @@ def generatePcapFile(filename, number_of_packets, ipv4_header, protocol_header_d
     writeByteStringToFile(bytestring, output_path)
     
 
-def save_packets_on_training(image, filename, epoch):
+# def save_packets_on_training(image, filename, epoch):
+#     epoch_path = os.path.join(output_images_dir, f"generated_images_{epoch}")
+    
+#     ipv4_header = []
+#     protocol_header_data = []
+    
+#     raw_ipv4, raw_protocol = decode_packets(image)
+
+#     ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
+                
+#     if ipv4_header[9:11] == '11':
+#         protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
+#     else:
+#         protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
+                
+#     pcapfile = filename + '.pcap'
+
+#     generatePcapFile(pcapfile, 1, ipv4_header, protocol_header_data, True, epoch_path)
+#     print("Pcap file generated!")
+
+
+####
+def save_packets_on_training(images, filename, epoch, examples):
     epoch_path = os.path.join(output_images_dir, f"generated_images_{epoch}")
     
     ipv4_header = []
     protocol_header_data = []
     
-    raw_ipv4, raw_protocol = decode_packets(image)
+    for i in range(1, examples + 1):
+        raw_ipv4, raw_protocol = raw_ipv4, raw_protocol = decode_packets(images[i-1])
 
-    ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
+        ipv4_header.append(raw_ipv4[0:4] + 'XX' 'XX' + raw_ipv4[8:20] + 'YY' 'YY' + raw_ipv4[24:40])
+                    
+        if ipv4_header[9:11] == '11':
+            protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
+        else:
+            protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
+            
+    pcapfile = filename + str(epoch) + '.pcap'
                 
-    if ipv4_header[9:11] == '11':
-        protocol_header_data.append(raw_protocol[0:4] + 'XX' 'XX' + raw_protocol[8:16] + raw_protocol[48:128])
-    else:
-        protocol_header_data.append(raw_protocol[0:8] + 'XX' 'XX' + 'YY' 'YY' + raw_protocol[16:])
-                
-    pcapfile = filename + '.pcap'
-
-    generatePcapFile(pcapfile, 1, ipv4_header, protocol_header_data, True, epoch_path)
+    generatePcapFile(pcapfile, examples, ipv4_header, protocol_header_data, True, epoch_path)
     print("Pcap file generated!")
-    
+
+###
+
 def main():
     '''Main function to generate packets and pcap file'''
     number_of_packets = int(input("Type the number of packets to generate: "))
